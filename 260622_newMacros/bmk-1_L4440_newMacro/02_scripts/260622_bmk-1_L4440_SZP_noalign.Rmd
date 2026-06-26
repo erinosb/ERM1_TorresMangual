@@ -173,7 +173,7 @@ ggplot(data = bmk1_RNAi_data_total, aes(x = timepoints, y = intensity, group = c
 
 ## Skip peak alignment - use fixed coordinate instead
 
-Alignment step removed (see prior discussion: aligning each embryo to its own
+Alignment step removed (prior discussion: aligning each embryo to its own
 observed channel-2 peak risks manufacturing apparent enrichment at the
 alignment point, since by construction that point is the brightest value in
 every embryo). Instead, every embryo uses the same fixed coordinate system
@@ -217,6 +217,16 @@ total_align_long %>%
   arrange(aligned_row) %>%
   print(n = Inf)
 ```
+## Generate .csv of max intensities for erm-1 in bmk-1 KD and L4440 control 
+
+```{r}
+max_intensities <- total_align_long %>%
+  filter(!grepl("ch1", unique_id)) %>% # filter out rows that contain set-3 in ch1
+  group_by(unique_id) %>%
+  slice_max(intensity, n = 1, with_ties = FALSE)
+
+write_csv(max_intensities, "bmk-1_L4440_ch2_max_intensities.csv")
+```
 
 
 ## re-arrange the dataset and calculate the means 
@@ -234,6 +244,19 @@ table(bmk1_norm_total$channel, bmk1_norm_total$treatment)
 
 head(bmk1_norm_total)
 
+```
+## Visualize how normalization is affecting y-axis
+
+```{r}
+ggplot(data = bmk1_norm_total, aes(x = aligned_row, y = normalized_intensity, 
+                                     group = interaction(date, embryoID, channel))) +
+  geom_line(aes(color = interaction(date, embryoID, channel)), alpha = 0.5) +
+  facet_wrap(~ channel + treatment) +
+  guides(color = "none") +
+  theme_bw()
+```
+
+```{r}
 # Separate out the unique identifier info, then pivot sider
 bmk1_wide_by_sample <- bmk1_norm_total %>%
   pivot_wider(names_from = c(date, embryoID, channel, treatment), 
@@ -270,7 +293,7 @@ bmk1_wide_with_range <- bmk1_wide_with_stats %>%
 
 colorselection = c("#000000", "#2189ce")
 
-# Plot split by Nocodazole concentration
+# Plot split by RNAi treatment and L4440 empty vector control 
 a <- ggplot(data = bmk1_wide_with_range, aes(x = aligned_row, y = mean_signal, group = interaction(channel, treatment)))+
   geom_line(aes(color=channel))+
   scale_color_manual(values = colorselection, aesthetics = c("colour", "fill"), labels = c("set-1 mRNA", "erm-1 mRNA"))+
@@ -279,13 +302,6 @@ a <- ggplot(data = bmk1_wide_with_range, aes(x = aligned_row, y = mean_signal, g
   theme_bw()
 
 a
-
-
-#pdf(file = "../03_outputPlots/260315_erm_set3_nocodazole.pdf", width = 4, height = 3)
-
-a
-
-dev.off()
 
 
 # Plot in a different way - set-3 and erm-1 mRNA split into facets
@@ -300,15 +316,6 @@ b <- ggplot(data = bmk1_wide_with_range, aes(x = aligned_row, y = mean_signal, g
   geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax, fill=treatment), alpha = 0.2, ) +
   facet_wrap(~ channel, labeller = labeller(channel = channel.labs))+
   theme_bw()
-
-b
-
-
-# pdf(file = "../03_outputPlots/260315_erm_set3_nocodazole_bytranscript.pdf", width = 4, height = 3)
-# 
-# b
-
-dev.off()
 
 ```
 
