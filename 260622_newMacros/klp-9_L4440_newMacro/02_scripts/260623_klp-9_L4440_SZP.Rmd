@@ -8,6 +8,8 @@ output:
     toc_depth: 4
 ---
 
+# This script is aligning the L4440 erm-1 channel by max intensity. 
+
 ## load libraries
 
 ```{r setup, echo = TRUE, warning = FALSE, message=FALSE}
@@ -161,8 +163,6 @@ ggplot(data = klp9_RNAi_data_total, aes(x = timepoints, y = intensity, group = c
   theme_bw()
 
 ```
-
-
 ## Align the erm-1 channel info
 
 This step isn't really necessary but can help align the erm-1 samples based on the peak. Any associated set-3 samples come along for the ride.
@@ -258,8 +258,6 @@ total_align_long %>%
 
 ```{r meanplot, echo = TRUE, warning = FALSE, message = FALSE}
 
-
-
 # Normalize the data by dividing by the embryo-specific mean
 klp9_norm_total <- total_align_long %>%
   separate_wider_delim(unique_id, delim = "_", names = c("date", NA, "treatment", "embryoID", "channel")) %>%
@@ -268,6 +266,19 @@ klp9_norm_total <- total_align_long %>%
 table(klp9_norm_total$channel, klp9_norm_total$treatment)
 
 head(klp9_norm_total)
+```
+## Visualize how normalization is affecting y-axis
+
+```{r}
+ggplot(data = klp9_norm_total, aes(x = aligned_row, y = normalized_intensity, 
+                                     group = interaction(date, embryoID, channel))) +
+  geom_line(aes(color = interaction(date, embryoID, channel)), alpha = 0.5) +
+  facet_wrap(~ channel + treatment) +
+  guides(color = "none") +
+  theme_bw()
+```
+
+```{r}
 
 # Separate out the unique identifier info, then pivot sider
 klp9_wide_by_sample <- klp9_norm_total %>%

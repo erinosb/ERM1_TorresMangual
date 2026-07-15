@@ -1,0 +1,15 @@
+260615
+
+Sam Zavislan 
+
+Purpose: find bmk-1 min med and max 
+
+A tibble:6 × 7
+Groups:treatment, channel [3]
+date    treatment   embryoID channel data fc_enric  	log2_fc
+221011	control	    13	ch1		          1.1979623		0.26058253
+230408	bmk-1-RNAi	13	ch1	       		  0.9437052		-0.08359189
+230408	bmk-1-RNAi	13	ch2	    		  0.8711344		-0.19903284
+231107	bmk-1-RNAi	10	ch2				  1.6855301		0.75320235
+231113	bmk-1-RNAi	06	ch1				  1.2235480		0.29107071
+240701	control	    10	ch1				  0.9584495		-0.06122562

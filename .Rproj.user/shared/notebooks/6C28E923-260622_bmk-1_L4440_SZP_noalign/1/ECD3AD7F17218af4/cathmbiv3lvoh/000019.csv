@@ -1,6 +1,0 @@
-"0","ggplot(data = bmk1_norm_total, aes(x = aligned_row, y = normalized_intensity, "
-"0","                                     group = interaction(date, embryoID, channel))) +"
-"0","  geom_line(aes(color = interaction(date, embryoID, channel)), alpha = 0.5) +"
-"0","  facet_wrap(~ channel + treatment) +"
-"0","  guides(color = ""none"") +"
-"0","  theme_bw()"

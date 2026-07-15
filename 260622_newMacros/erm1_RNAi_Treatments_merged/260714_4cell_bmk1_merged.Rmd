@@ -1,0 +1,404 @@
+---
+title: "bmk-1 RNAi — 4-cell Stage Merged Analysis (ABa-ABp & ABa-EMS)"
+author: "Sam Zavislan-Pullaro"
+date: "2026-07-14"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    theme: flatly
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6)
+```
+
+## Load libraries
+
+```{r setup}
+library(tidyverse)
+library(data.table)
+library(rstatix)
+library(ggrepel)
+library(gridExtra)
+```
+
+---
+
+## Import data
+
+Note: channel 1 = set-3 mRNA | channel 2 = erm-1 mRNA
+
+Each cell-pair experiment has its own set of L4440 controls (measured
+separately) and is kept distinct throughout until the combined boxplot.
+Membraneyness is calculated using positions ±50 (matching the individual
+4-cell scripts), not ±100 used in the 2-cell analysis.
+
+```{r import}
+
+col_times <- paste(rep(1:333), sep = "")
+
+set_cols <- function(df) {
+  colnames(df) <- c("file", "channel", col_times)
+  df
+}
+
+# ── ABa-ABp controls (4 reps) ────────────────────────────────────────────────
+abp_ctrl_1 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-11_1324_datafile_for_231107_LP306_L4440.txt",       header = FALSE, sep = "\t"))
+abp_ctrl_2 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-11_1252_datafile_for_230713_L4440_RNAi_rep1.txt",    header = FALSE, sep = "\t"))
+abp_ctrl_3 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-11_133_datafile_for_230828_L4440_RNAi_rep2.txt",     header = FALSE, sep = "\t"))
+abp_ctrl_4 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-11_1337_datafile_for_240122_LP306_L4440-rep3.txt",   header = FALSE, sep = "\t"))
+
+# ── ABa-ABp bmk-1 RNAi (4 reps) ─────────────────────────────────────────────
+abp_test_1 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-14_126_datafile_for_220719_LP306_bmk-1_RNAi.txt",    header = FALSE, sep = "\t"))
+abp_test_2 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-14_1216_datafile_for_230408_LP306_BMK-1_rep1.txt",   header = FALSE, sep = "\t"))
+abp_test_3 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-14_1222_datafile_for_231107_LP306_BMK-1_rep2.txt",   header = FALSE, sep = "\t"))
+abp_test_4 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-14_1225_datafile_for_231113_LP306_BMK-1_rep3.txt",   header = FALSE, sep = "\t"))
+
+# ── ABa-EMS controls (4 reps) ────────────────────────────────────────────────
+ems_ctrl_1 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-11_1329_datafile_for_231107_LP306_L4440.txt",        header = FALSE, sep = "\t"))
+ems_ctrl_2 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-11_1257_datafile_for_230713_L4440_RNAi_rep1.txt",    header = FALSE, sep = "\t"))
+ems_ctrl_3 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-11_1311_datafile_for_230828_L4440_RNAi_rep2.txt",    header = FALSE, sep = "\t"))
+ems_ctrl_4 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-11_1346_datafile_for_240122_LP306_L4440-rep3.txt",   header = FALSE, sep = "\t"))
+
+# ── ABa-EMS bmk-1 RNAi (4 reps) ─────────────────────────────────────────────
+ems_test_1 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-14_1233_datafile_for_220719_LP306_bmk-1_RNAi.txt",   header = FALSE, sep = "\t"))
+ems_test_2 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-14_1238_datafile_for_230408_LP306_BMK-1_rep1.txt",   header = FALSE, sep = "\t"))
+ems_test_3 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-14_1241_datafile_for_231107_LP306_BMK-1_rep2.txt",   header = FALSE, sep = "\t"))
+ems_test_4 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-14_1244_datafile_for_231113_LP306_BMK-1_rep3.txt",   header = FALSE, sep = "\t"))
+
+```
+
+---
+
+## Annotate, merge, and apply fixed coordinate alignment
+
+```{r annotate_merge}
+
+annotate_df <- function(df) {
+  df[2:nrow(df), 1:335] %>%
+    separate_wider_delim(file, delim = "_",
+                         names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+    pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+    mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+}
+
+addInTimepoints <- function(tibble, ref_table) {
+  timepoints <- as.vector(unlist(ref_table[1, 3:335]))
+  repnumb    <- nrow(tibble) / 333
+  tibble::add_column(tibble, timepoints = rep(timepoints, repnumb), .after = "xpoint")
+}
+
+proc <- function(df, ref_df, pair_label) {
+  addInTimepoints(annotate_df(df), ref_df) %>%
+    mutate(cell_pair = pair_label)
+}
+
+all_4cell <- rbind(
+  proc(abp_ctrl_1, abp_ctrl_1, "ABa-ABp"), proc(abp_ctrl_2, abp_ctrl_1, "ABa-ABp"),
+  proc(abp_ctrl_3, abp_ctrl_1, "ABa-ABp"), proc(abp_ctrl_4, abp_ctrl_1, "ABa-ABp"),
+  proc(abp_test_1, abp_ctrl_1, "ABa-ABp"), proc(abp_test_2, abp_ctrl_1, "ABa-ABp"),
+  proc(abp_test_3, abp_ctrl_1, "ABa-ABp"), proc(abp_test_4, abp_ctrl_1, "ABa-ABp"),
+  proc(ems_ctrl_1, ems_ctrl_1, "ABa-EMS"), proc(ems_ctrl_2, ems_ctrl_1, "ABa-EMS"),
+  proc(ems_ctrl_3, ems_ctrl_1, "ABa-EMS"), proc(ems_ctrl_4, ems_ctrl_1, "ABa-EMS"),
+  proc(ems_test_1, ems_ctrl_1, "ABa-EMS"), proc(ems_test_2, ems_ctrl_1, "ABa-EMS"),
+  proc(ems_test_3, ems_ctrl_1, "ABa-EMS"), proc(ems_test_4, ems_ctrl_1, "ABa-EMS")
+)
+
+dt_4cell <- as.data.table(all_4cell)
+dt_4cell$xpoint <- as.integer(dt_4cell$xpoint)
+dt_4cell[, aligned_row := xpoint - 167]
+
+align_4cell <- dt_4cell %>%
+  select(cell_pair, strain, aligned_row, unique_id, intensity)
+
+cat("Total rows:", nrow(align_4cell), "\n")
+cat("Unique embryo IDs:", n_distinct(align_4cell$unique_id), "\n")
+
+```
+
+---
+
+## Normalize
+
+```{r normalize}
+
+norm_4cell <- align_4cell %>%
+  separate_wider_delim(unique_id, delim = "_",
+                       names = c("date", NA, "treatment", "embryoID", "channel")) %>%
+  group_by(date, embryoID, channel, treatment, cell_pair) %>%
+  mutate(normalized_intensity = intensity / mean(intensity, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    treatment      = factor(treatment, levels = c("L4440", "bmk-1")),
+    treatment_type = ifelse(treatment == "L4440", "L4440", "RNAi")
+  )
+
+table(norm_4cell$channel, norm_4cell$treatment, norm_4cell$cell_pair)
+
+```
+
+---
+
+## Color palettes
+
+```{r palettes}
+
+type_colors    <- c("L4440" = "darkgray", "RNAi" = "lightblue")
+channel_labels <- c("ch1" = "set-3 mRNA", "ch2" = "erm-1 mRNA")
+
+```
+
+---
+
+## Section 1: Individual normalized line scans
+
+```{r linescans_individual, fig.height = 8, fig.width = 12}
+
+ggplot(norm_4cell,
+       aes(x = aligned_row, y = normalized_intensity,
+           group = interaction(date, embryoID),
+           color = treatment)) +
+  geom_line(alpha = 0.4, linewidth = 0.3) +
+  scale_color_manual(values = c("L4440" = "gray50", "bmk-1" = "lightblue4")) +
+  facet_grid(channel ~ cell_pair + treatment,
+             labeller = labeller(channel = channel_labels)) +
+  labs(
+    title = "Individual normalized line scans — ABa-ABp and ABa-EMS",
+    x     = "Position (aligned_row)",
+    y     = "Normalized intensity"
+  ) +
+  guides(color = "none") +
+  theme_bw(base_size = 11) +
+  theme(strip.text = element_text(face = "bold"))
+
+```
+
+---
+
+## Section 2: Mean ± SD line scans
+
+```{r linescans_mean, fig.height = 6, fig.width = 12}
+
+mean_signal <- norm_4cell %>%
+  group_by(aligned_row, treatment, channel, cell_pair) %>%
+  summarize(
+    mean_signal = mean(normalized_intensity, na.rm = TRUE),
+    sd_signal   = sd(normalized_intensity,   na.rm = TRUE),
+    .groups     = "drop"
+  ) %>%
+  mutate(
+    ymeanmax = mean_signal + sd_signal,
+    ymeanmin = mean_signal - sd_signal,
+    group_id = interaction(treatment, cell_pair)
+  )
+
+ggplot(mean_signal,
+       aes(x = aligned_row, y = mean_signal,
+           color = treatment, linetype = cell_pair,
+           group = group_id)) +
+  geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax,
+                  fill = treatment), alpha = 0.15, color = NA) +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = c("L4440" = "gray50", "bmk-1" = "lightblue4")) +
+  scale_fill_manual(values  = c("L4440" = "gray50", "bmk-1" = "lightblue4")) +
+  facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
+  labs(
+    title    = "Mean ± SD normalized line scans — ABa-ABp and ABa-EMS",
+    x        = "Position (aligned_row)",
+    y        = "Mean normalized intensity",
+    color    = "Treatment",
+    linetype = "Cell pair"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(strip.text = element_text(face = "bold"),
+        legend.position = "right")
+
+```
+
+---
+
+## Section 3: Membraneyness — log2 fold change
+
+Ratio of normalized intensity at position 1 versus the mean of positions
+-50 and +50, matching the individual 4-cell scripts.
+
+```{r membraneyness}
+
+my_calc2 <- function(df) {
+  df$normalized_intensity[2] /
+    mean(c(df$normalized_intensity[1], df$normalized_intensity[3]))
+}
+
+fc_4cell <- norm_4cell %>%
+  filter(aligned_row %in% c(-50, 1, 50)) %>%
+  group_by(date, treatment, embryoID, channel, cell_pair) %>%
+  nest() %>%
+  mutate(fc_enrich = map_dbl(data, my_calc2)) %>%
+  ungroup() %>%
+  mutate(
+    log2_fc        = log(fc_enrich, base = 2),
+    treatment_type = ifelse(treatment == "L4440", "L4440", "RNAi"),
+    treatment      = factor(treatment, levels = c("L4440", "bmk-1"))
+  )
+
+summary(fc_4cell$log2_fc)
+
+```
+
+### 3a. Merged boxplot — separate controls per cell pair
+
+x-axis = cell pair, fill = treatment. Each cell pair's L4440 control stays
+paired with its own bmk-1 RNAi group.
+
+```{r boxplot_merged, fig.height = 6, fig.width = 8}
+
+p_merged <- ggplot(fc_4cell,
+                   aes(x = cell_pair, y = log2_fc, fill = treatment_type)) +
+  geom_boxplot(outlier.shape = NA, width = 0.6) +
+  geom_jitter(aes(color = treatment_type),
+              position = position_jitterdodge(jitter.width = 0.2),
+              size = 1.5, alpha = 0.7) +
+  scale_fill_manual(
+    values = type_colors,
+    labels = c("L4440" = "L4440 control", "RNAi" = "bmk-1 RNAi")
+  ) +
+  scale_color_manual(
+    values = c("L4440" = "gray30", "RNAi" = "#1a6fa0"),
+    guide  = "none"
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_y_continuous(limits = c(-0.5, 1.5)) +
+  facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
+  labs(
+    title = "4-cell bmk-1 RNAi — membraneyness (separate controls)",
+    x     = "Cell pair",
+    y     = "log2 (intensity at 0 / mean intensity at ±50)",
+    fill  = NULL
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    strip.text      = element_text(face = "bold"),
+    legend.position = "top"
+  )
+
+p_merged
+
+```
+
+### 3b. Combined boxplot — controls and treatments pooled
+
+ABa-ABp and ABa-EMS L4440 controls are combined into one L4440 group;
+both bmk-1 RNAi sets are combined into one bmk-1 group.
+
+```{r boxplot_combined, fig.height = 6, fig.width = 6}
+
+p_combined <- ggplot(fc_4cell,
+                     aes(x = treatment, y = log2_fc, fill = treatment_type)) +
+  geom_boxplot(outlier.shape = NA, width = 0.6) +
+  geom_jitter(aes(color = treatment_type),
+              position = position_jitterdodge(jitter.width = 0.2),
+              size = 1.5, alpha = 0.7) +
+  scale_fill_manual(
+    values = type_colors,
+    labels = c("L4440" = "L4440 control", "RNAi" = "bmk-1 RNAi")
+  ) +
+  scale_color_manual(
+    values = c("L4440" = "gray30", "RNAi" = "#1a6fa0"),
+    guide  = "none"
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_y_continuous(limits = c(-0.5, 1.5)) +
+  facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
+  labs(
+    title = "4-cell bmk-1 RNAi — membraneyness (pooled)",
+    x     = "Treatment",
+    y     = "log2 (intensity at 0 / mean intensity at ±50)",
+    fill  = NULL
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    axis.text.x     = element_text(face = "italic"),
+    strip.text      = element_text(face = "bold"),
+    legend.position = "top"
+  )
+
+p_combined
+
+```
+
+---
+
+## Summary statistics
+
+```{r summary_stats}
+
+fc_4cell %>%
+  group_by(treatment, channel, cell_pair) %>%
+  summarise(
+    n             = n(),
+    median_log2fc = round(median(log2_fc, na.rm = TRUE), 3),
+    mean_log2fc   = round(mean(log2_fc,   na.rm = TRUE), 3),
+    sd_log2fc     = round(sd(log2_fc,     na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  arrange(channel, cell_pair, treatment) %>%
+  print(n = Inf)
+
+```
+
+---
+
+## Statistics
+
+### Per cell pair — Wilcoxon L4440 vs bmk-1
+
+```{r stats_per_pair}
+
+fc_4cell %>%
+  group_by(channel, cell_pair) %>%
+  wilcox_test(log2_fc ~ treatment) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+```
+
+### Pooled — Wilcoxon L4440 vs bmk-1
+
+```{r stats_pooled}
+
+fc_4cell %>%
+  group_by(channel) %>%
+  wilcox_test(log2_fc ~ treatment) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+```
+
+---
+
+## Save plots
+
+```{r save_plots}
+
+today    <- format(Sys.Date(), "%y%m%d")
+pdf_path <- paste0("./", today, "_4cell_bmk1_merged_plots.pdf")
+
+pdf(pdf_path, width = 10, height = 6)
+  print(p_merged)
+  print(p_combined)
+dev.off()
+
+cat("Plots saved to:", pdf_path, "\n")
+
+```
+
+---
+
+## Session info
+
+```{r sessionInfo}
+sessionInfo()
+```

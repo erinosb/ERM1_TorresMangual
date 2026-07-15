@@ -1,0 +1,20 @@
+Initiaiting macro: erm1_membrane_quantification_2cell
+
+Date: 2026-6-15
+Time: 1116
+
+Input Directory: /Users/samzavislan/Desktop/onish/people/naly/projects/erm-1_LP306_RNAi/SZP260525_R_analysis/outliers
+Output Directory: /Users/samzavislan/Desktop/onish/people/naly/projects/erm-1_LP306_RNAi/SZP260525_R_analysis/outliers/03_output
+
+Channel 2 will be included in the composite in magenta
+Channel 3 will be included in the composite in green
+Channel 4 will be included in the composite in blue
+
+Will process the following DV files:
+	230408_BMk-1_RNAi_LP306_12_R3D.dv
+	230408_BMk-1_RNAi_LP306_13_R3D.dv
+	231107_LP306_BMK-1_10_R3D.dv
+
+Now processing file:	230408_BMk-1_RNAi_LP306_12_R3D.dv
+	--Starting Z-projection
+	--There are 57 slices
