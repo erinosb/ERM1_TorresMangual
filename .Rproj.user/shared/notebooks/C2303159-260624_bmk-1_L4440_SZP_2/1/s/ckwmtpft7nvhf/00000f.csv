@@ -1,8 +1,0 @@
-"0","### Run Welch's t-test to confirm same result "
-"0","stats_ttest <- foldChange_calc %>%"
-"0","  group_by(channel) %>%"
-"0","  t_test(fc_enrich ~ treatment) %>%"
-"0","  group_by(channel) %>%              # re-add grouping, lost by t_test()"
-"0","  adjust_pvalue(method = ""BH"") %>% "
-"0","  add_significance()"
-"0","stats_ttest"

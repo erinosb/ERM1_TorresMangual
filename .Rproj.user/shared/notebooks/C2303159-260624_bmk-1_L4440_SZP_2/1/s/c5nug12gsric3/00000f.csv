@@ -1,7 +1,0 @@
-"0","label_points <- bind_rows("
-"0","  df %>% slice(which.min(log2_fc)) %>% mutate(label = ""min""),"
-"0","  df %>% slice(which.max(log2_fc)) %>% mutate(label = ""max""),"
-"0","  df %>% filter(n() >= 3) %>% "
-"0","         slice(which.min(abs(log2_fc - med))) %>% mutate(label = ""median"")"
-"0",") %>%"
-"0","  distinct(treatment, channel, date, embryoID, .keep_all = TRUE)"

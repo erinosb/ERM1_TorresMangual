@@ -1,8 +1,0 @@
-"0","foldChange_calc %>%"
-"0","  mutate(log2_fc = log(fc_enrich, base = 2)) %>%"
-"0","  group_by(treatment, channel) %>%"
-"0","  slice(c("
-"0","    which.min(log2_fc),"
-"0","    which(log2_fc == median(log2_fc)), "
-"0","    which.max(log2_fc)"
-"0","  ))"

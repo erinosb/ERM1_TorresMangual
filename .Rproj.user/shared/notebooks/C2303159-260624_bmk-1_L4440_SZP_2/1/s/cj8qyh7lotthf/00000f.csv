@@ -1,4 +1,0 @@
-"0","foldChange_calc %>%"
-"0","  mutate(log2_fc = log(fc_enrich, base = 2)) %>%"
-"0","  group_by(treatment, channel) %>%"
-"0","  filter(log2_fc == min(log2_fc) | log2_fc == max(log2_fc))"
