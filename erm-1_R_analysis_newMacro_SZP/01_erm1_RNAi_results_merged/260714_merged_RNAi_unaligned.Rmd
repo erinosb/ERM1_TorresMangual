@@ -1,0 +1,597 @@
+---
+title: "erm-1 RNAi Treatments — Merged Analysis (Unaligned)"
+author: "Sam Zavislan-Pullaro"
+date: "2026-07-14"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    theme: flatly
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6)
+```
+
+## Load libraries
+
+```{r setup}
+library(tidyverse)
+library(data.table)
+library(rstatix)
+library(ggrepel)
+library(gridExtra)
+```
+
+---
+
+## Import data
+
+Note: channel 1 = set-3 mRNA | channel 2 = erm-1 mRNA
+
+L4440 control files are loaded once and shared across all treatment comparisons.
+
+```{r import}
+
+col_times <- paste(rep(1:333), sep = "")
+
+# ── Controls (L4440 — loaded once) ──────────────────────────────────────────
+control_1 <- read.table("../erm-1_L4440/01_input/2026-6-22_1458_datafile_for_230713_L4440_RNAi_rep1.txt",
+                        header = FALSE, sep = "\t")
+control_2 <- read.table("../erm-1_L4440/01_input/2026-6-22_153_datafile_for_230828_L4440_RNAi_rep2.txt",
+                        header = FALSE, sep = "\t")
+control_3 <- read.table("../erm-1_L4440/01_input/2026-6-22_156_datafile_for_240122_LP306_L4440-rep3.txt",
+                        header = FALSE, sep = "\t")
+
+colnames(control_1) <- c("file", "channel", col_times)
+colnames(control_2) <- c("file", "channel", col_times)
+colnames(control_3) <- c("file", "channel", col_times)
+
+# ── erm-1 RNAi (3 reps) ─────────────────────────────────────────────────────
+erm1_1 <- read.table("../erm-1_L4440/01_input/2026-6-24_2158_datafile_for_240219_LP306_ERM-1-rep1.txt",
+                     header = FALSE, sep = "\t")
+erm1_2 <- read.table("../erm-1_L4440/01_input/2026-6-24_222_datafile_for_240221_LP306_ERM-1_RNAi-rep2.txt",
+                     header = FALSE, sep = "\t")
+erm1_3 <- read.table("../erm-1_L4440/01_input/2026-6-24_224_datafile_for_240222_LP306_ERM-1_RNAi-rep3.txt",
+                     header = FALSE, sep = "\t")
+
+colnames(erm1_1) <- c("file", "channel", col_times)
+colnames(erm1_2) <- c("file", "channel", col_times)
+colnames(erm1_3) <- c("file", "channel", col_times)
+
+# ── klp-18 RNAi (3 reps) ────────────────────────────────────────────────────
+klp18_1 <- read.table("../klp-18_L4400_newMacro/01_input/2026-6-22_1254_datafile_for_231207_LP306_klp-18_rep1.txt",
+                      header = FALSE, sep = "\t")
+klp18_2 <- read.table("../klp-18_L4400_newMacro/01_input/2026-6-22_1259_datafile_for_231208_LP306_klp-18_rep2.txt",
+                      header = FALSE, sep = "\t")
+klp18_3 <- read.table("../klp-18_L4400_newMacro/01_input/2026-6-22_135_datafile_for_231224_LP306_klp-18_RNAi-rep3.txt",
+                      header = FALSE, sep = "\t")
+
+colnames(klp18_1) <- c("file", "channel", col_times)
+colnames(klp18_2) <- c("file", "channel", col_times)
+colnames(klp18_3) <- c("file", "channel", col_times)
+
+# ── klp-19 RNAi (3 reps) ────────────────────────────────────────────────────
+klp19_1 <- read.table("../klp-19_L4440/01_input/2026-6-22_1335_datafile_for_231228_LP306_KLP-19-rep1.txt",
+                      header = FALSE, sep = "\t")
+klp19_2 <- read.table("../klp-19_L4440/01_input/2026-6-23_174_datafile_for_240122_LP306_KLP-19-rep2.txt",
+                      header = FALSE, sep = "\t")
+klp19_3 <- read.table("../klp-19_L4440/01_input/2026-6-23_1712_datafile_for_240123_LP306_KLP-19_rep3.txt",
+                      header = FALSE, sep = "\t")
+
+colnames(klp19_1) <- c("file", "channel", col_times)
+colnames(klp19_2) <- c("file", "channel", col_times)
+colnames(klp19_3) <- c("file", "channel", col_times)
+
+# ── klp-9 RNAi (3 reps) ─────────────────────────────────────────────────────
+klp9_1 <- read.table("../klp-9_L4440_newMacro/01_input/2026-6-23_1559_datafile_for_231207_LP306_KLP-9.txt",
+                     header = FALSE, sep = "\t")
+klp9_2 <- read.table("../klp-9_L4440_newMacro/01_input/2026-6-23_162_datafile_for_231208_LP306_KLP-9_rep2.txt",
+                     header = FALSE, sep = "\t")
+klp9_3 <- read.table("../klp-9_L4440_newMacro/01_input/2026-6-23_166_datafile_for_231224_LP306_klp-9_rep3.txt",
+                     header = FALSE, sep = "\t")
+
+colnames(klp9_1) <- c("file", "channel", col_times)
+colnames(klp9_2) <- c("file", "channel", col_times)
+colnames(klp9_3) <- c("file", "channel", col_times)
+
+# ── nmy-1 RNAi (3 reps) ─────────────────────────────────────────────────────
+nmy1_1 <- read.table("../nmy-1_L4440/01_input/2026-6-24_117_datafile_for_240108_NMY-1_RNAi-rep1.txt",
+                     header = FALSE, sep = "\t")
+nmy1_2 <- read.table("../nmy-1_L4440/01_input/2026-6-24_1116_datafile_for_240217_LP306_NMY-1_RNAi-rep2.txt",
+                     header = FALSE, sep = "\t")
+nmy1_3 <- read.table("../nmy-1_L4440/01_input/2026-6-24_1124_datafile_for_240221_LP306_NMY-1_RNAi-rep3.txt",
+                     header = FALSE, sep = "\t")
+
+colnames(nmy1_1) <- c("file", "channel", col_times)
+colnames(nmy1_2) <- c("file", "channel", col_times)
+colnames(nmy1_3) <- c("file", "channel", col_times)
+
+# ── nmy-2 RNAi (4 reps) ─────────────────────────────────────────────────────
+nmy2_1 <- read.table("../nmy-2_L4440/01_input/2026-6-24_1156_datafile_for_240113_NMY-2_RNAi-rep1.txt",
+                     header = FALSE, sep = "\t")
+nmy2_2 <- read.table("../nmy-2_L4440/01_input/2026-6-24_122_datafile_for_240122_LP306_NMY-2.txt",
+                     header = FALSE, sep = "\t")
+nmy2_3 <- read.table("../nmy-2_L4440/01_input/2026-6-24_129_datafile_for_240123_NMY-2_RNAi-rep2.txt",
+                     header = FALSE, sep = "\t")
+nmy2_4 <- read.table("../nmy-2_L4440/01_input/2026-6-24_147_datafile_for_240221_LP306_NMY-2_RNAi-rep3.txt",
+                     header = FALSE, sep = "\t")
+
+colnames(nmy2_1) <- c("file", "channel", col_times)
+colnames(nmy2_2) <- c("file", "channel", col_times)
+colnames(nmy2_3) <- c("file", "channel", col_times)
+colnames(nmy2_4) <- c("file", "channel", col_times)
+
+# ── unc-116 RNAi (4 reps) ───────────────────────────────────────────────────
+unc116_1 <- read.table("../unc-116_L4440/01_input/2026-6-24_1850_datafile_for_231228_LP306_UNC-116-rep1.txt",
+                       header = FALSE, sep = "\t")
+unc116_2 <- read.table("../unc-116_L4440/01_input/2026-6-24_1854_datafile_for_240106_LP306_UNC-116_RNAi-rep2.txt",
+                       header = FALSE, sep = "\t")
+unc116_3 <- read.table("../unc-116_L4440/01_input/2026-6-24_1856_datafile_for_240120_LP306_UNC-116_RNAi-rep3.txt",
+                       header = FALSE, sep = "\t")
+unc116_4 <- read.table("../unc-116_L4440/01_input/2026-6-24_191_datafile_for_240123_UNC116-rep4.txt",
+                       header = FALSE, sep = "\t")
+
+colnames(unc116_1) <- c("file", "channel", col_times)
+colnames(unc116_2) <- c("file", "channel", col_times)
+colnames(unc116_3) <- c("file", "channel", col_times)
+colnames(unc116_4) <- c("file", "channel", col_times)
+
+# ── bmk-1 RNAi (4 reps) ─────────────────────────────────────────────────────
+bmk1_1 <- read.table("../bmk-1_L4440_newMacro/01_input/2026-6-22_1528_datafile_for_220719_LP306_bmk-1_RNAi.txt",
+                     header = FALSE, sep = "\t")
+bmk1_2 <- read.table("../bmk-1_L4440_newMacro/01_input/2026-6-22_1536_datafile_for_230408_LP306_BMK-1_rep1.txt",
+                     header = FALSE, sep = "\t")
+bmk1_3 <- read.table("../bmk-1_L4440_newMacro/01_input/2026-6-22_1544_datafile_for_231107_LP306_BMK-1_rep2.txt",
+                     header = FALSE, sep = "\t")
+bmk1_4 <- read.table("../bmk-1_L4440_newMacro/01_input/2026-6-22_1550_datafile_for_231113_LP306_BMK-1_rep3.txt",
+                     header = FALSE, sep = "\t")
+
+colnames(bmk1_1) <- c("file", "channel", col_times)
+colnames(bmk1_2) <- c("file", "channel", col_times)
+colnames(bmk1_3) <- c("file", "channel", col_times)
+colnames(bmk1_4) <- c("file", "channel", col_times)
+
+```
+
+---
+
+## Create annotation columns and add timepoints
+
+```{r annotate}
+
+# Helper: pivot longer + annotate ─────────────────────────────────────────────
+annotate_df <- function(df) {
+  df[2:nrow(df), 1:335] %>%
+    separate_wider_delim(file, delim = "_",
+                         names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+    pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+    mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+}
+
+# Helper: add timepoints from the header row of any loaded table ──────────────
+addInTimepoints <- function(tibble, ref_table) {
+  timepoints <- as.vector(unlist(ref_table[1, 3:335]))
+  repnumb    <- nrow(tibble) / 333
+  tibble::add_column(tibble, timepoints = rep(timepoints, repnumb), .after = "xpoint")
+}
+
+# Controls
+ctrl1_pt <- addInTimepoints(annotate_df(control_1), control_1)
+ctrl2_pt <- addInTimepoints(annotate_df(control_2), control_1)
+ctrl3_pt <- addInTimepoints(annotate_df(control_3), control_1)
+
+# erm-1
+erm1_1_pt <- addInTimepoints(annotate_df(erm1_1), control_1)
+erm1_2_pt <- addInTimepoints(annotate_df(erm1_2), control_1)
+erm1_3_pt <- addInTimepoints(annotate_df(erm1_3), control_1)
+
+# klp-18
+klp18_1_pt <- addInTimepoints(annotate_df(klp18_1), control_1)
+klp18_2_pt <- addInTimepoints(annotate_df(klp18_2), control_1)
+klp18_3_pt <- addInTimepoints(annotate_df(klp18_3), control_1)
+
+# klp-19
+klp19_1_pt <- addInTimepoints(annotate_df(klp19_1), control_1)
+klp19_2_pt <- addInTimepoints(annotate_df(klp19_2), control_1)
+klp19_3_pt <- addInTimepoints(annotate_df(klp19_3), control_1)
+
+# klp-9
+klp9_1_pt <- addInTimepoints(annotate_df(klp9_1), control_1)
+klp9_2_pt <- addInTimepoints(annotate_df(klp9_2), control_1)
+klp9_3_pt <- addInTimepoints(annotate_df(klp9_3), control_1)
+
+# nmy-1
+nmy1_1_pt <- addInTimepoints(annotate_df(nmy1_1), control_1)
+nmy1_2_pt <- addInTimepoints(annotate_df(nmy1_2), control_1)
+nmy1_3_pt <- addInTimepoints(annotate_df(nmy1_3), control_1)
+
+# nmy-2
+nmy2_1_pt <- addInTimepoints(annotate_df(nmy2_1), control_1)
+nmy2_2_pt <- addInTimepoints(annotate_df(nmy2_2), control_1)
+nmy2_3_pt <- addInTimepoints(annotate_df(nmy2_3), control_1)
+nmy2_4_pt <- addInTimepoints(annotate_df(nmy2_4), control_1)
+
+# unc-116
+unc116_1_pt <- addInTimepoints(annotate_df(unc116_1), control_1)
+unc116_2_pt <- addInTimepoints(annotate_df(unc116_2), control_1)
+unc116_3_pt <- addInTimepoints(annotate_df(unc116_3), control_1)
+unc116_4_pt <- addInTimepoints(annotate_df(unc116_4), control_1)
+
+# bmk-1
+bmk1_1_pt <- addInTimepoints(annotate_df(bmk1_1), control_1)
+bmk1_2_pt <- addInTimepoints(annotate_df(bmk1_2), control_1)
+bmk1_3_pt <- addInTimepoints(annotate_df(bmk1_3), control_1)
+bmk1_4_pt <- addInTimepoints(annotate_df(bmk1_4), control_1)
+
+```
+
+---
+
+## Merge all data and apply fixed coordinate alignment
+
+L4440 controls are included once (shared reference across all experiments).
+Peak alignment is skipped: every embryo receives the same fixed coordinate,
+recentered so xpoint 1:333 maps to aligned_row -166:166.
+
+```{r merge_align}
+
+all_data <- rbind(
+  ctrl1_pt,   ctrl2_pt,   ctrl3_pt,
+  erm1_1_pt,  erm1_2_pt,  erm1_3_pt,
+  klp18_1_pt, klp18_2_pt, klp18_3_pt,
+  klp19_1_pt, klp19_2_pt, klp19_3_pt,
+  klp9_1_pt,  klp9_2_pt,  klp9_3_pt,
+  nmy1_1_pt,  nmy1_2_pt,  nmy1_3_pt,
+  nmy2_1_pt,  nmy2_2_pt,  nmy2_3_pt,  nmy2_4_pt,
+  unc116_1_pt, unc116_2_pt, unc116_3_pt, unc116_4_pt,
+  bmk1_1_pt,   bmk1_2_pt,   bmk1_3_pt,   bmk1_4_pt
+)
+
+dt <- as.data.table(all_data)
+dt$xpoint <- as.integer(dt$xpoint)
+dt[, aligned_row := xpoint - 167]
+
+total_align_long <- dt %>%
+  select(strain, aligned_row, unique_id, intensity)
+
+cat("Total rows:", nrow(total_align_long), "\n")
+cat("Unique embryo IDs:", n_distinct(total_align_long$unique_id), "\n")
+
+```
+
+---
+
+## Normalize
+
+Each embryo is normalized to its own mean intensity (per embryo per channel).
+
+```{r normalize}
+
+norm_total <- total_align_long %>%
+  separate_wider_delim(unique_id, delim = "_",
+                       names = c("date", NA, "treatment", "embryoID", "channel")) %>%
+  group_by(date, embryoID, channel, treatment) %>%
+  mutate(normalized_intensity = intensity / mean(intensity, na.rm = TRUE)) %>%
+  ungroup()
+
+treatment_order <- c("L4440", "erm-1", "klp-9", "bmk-1", "klp-18", "klp-19", "unc-116",
+                     "nmy-1", "nmy-2")
+norm_total$treatment <- factor(norm_total$treatment, levels = treatment_order)
+
+# Label each embryo as control or RNAi for coloring
+norm_total <- norm_total %>%
+  mutate(treatment_type = ifelse(treatment == "L4440", "L4440", "RNAi"))
+
+table(norm_total$channel, norm_total$treatment)
+
+```
+
+---
+
+## Color palettes
+
+```{r palettes}
+
+# Per-treatment palette for line scans
+treatment_colors <- c(
+  "L4440"   = "gray50",
+  "bmk-1"   = "#17becf",
+  "erm-1"   = "#e41a1c",
+  "klp-18"  = "#377eb8",
+  "klp-19"  = "#ff7f00",
+  "klp-9"   = "#4daf4a",
+  "nmy-1"   = "#984ea3",
+  "nmy-2"   = "#a65628",
+  "unc-116" = "#f781bf"
+)
+
+# Blue/grey scheme matching individual scripts (for boxplots)
+type_colors <- c("L4440" = "darkgray", "RNAi" = "lightblue")
+
+channel_labels <- c("ch1" = "set-3 mRNA", "ch2" = "erm-1 mRNA")
+
+```
+
+---
+
+## Section 1: Individual normalized line scans
+
+All embryo-level line scans, faceted by channel and treatment.
+
+```{r linescans_individual, fig.height = 12, fig.width = 14}
+
+ggplot(norm_total,
+       aes(x = aligned_row, y = normalized_intensity,
+           group = interaction(date, embryoID),
+           color = treatment)) +
+  geom_line(alpha = 0.4, linewidth = 0.3) +
+  scale_color_manual(values = treatment_colors) +
+  facet_grid(channel ~ treatment,
+             labeller = labeller(channel = channel_labels)) +
+  labs(
+    title = "Individual normalized line scans — all treatments",
+    x     = "Position (aligned_row)",
+    y     = "Normalized intensity",
+    color = "Treatment"
+  ) +
+  guides(color = "none") +
+  theme_bw(base_size = 11) +
+  theme(strip.text = element_text(face = "bold"))
+
+```
+
+---
+
+## Section 2: Mean ± SD line scans
+
+### 2a. All treatments overlaid — one panel per channel
+
+```{r linescans_mean_overlaid, fig.height = 6, fig.width = 12}
+
+mean_signal <- norm_total %>%
+  group_by(aligned_row, treatment, channel) %>%
+  summarize(
+    mean_signal = mean(normalized_intensity, na.rm = TRUE),
+    sd_signal   = sd(normalized_intensity,   na.rm = TRUE),
+    .groups     = "drop"
+  ) %>%
+  mutate(
+    ymeanmax = mean_signal + sd_signal,
+    ymeanmin = mean_signal - sd_signal
+  )
+
+ggplot(mean_signal,
+       aes(x = aligned_row, y = mean_signal,
+           color = treatment, fill = treatment,
+           group = treatment)) +
+  geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax), alpha = 0.15, color = NA) +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = treatment_colors) +
+  scale_fill_manual(values  = treatment_colors) +
+  facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
+  labs(
+    title  = "Mean ± SD normalized line scans — all treatments",
+    x      = "Position (aligned_row)",
+    y      = "Mean normalized intensity",
+    color  = "Treatment",
+    fill   = "Treatment"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(strip.text = element_text(face = "bold"),
+        legend.position = "right")
+
+```
+
+### 2b. L4440 vs each RNAi treatment - faceted grid
+
+```{r linescans_mean_faceted, fig.height = 10, fig.width = 14}
+
+ggplot(mean_signal,
+       aes(x = aligned_row, y = mean_signal,
+           group = treatment)) +
+  geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax,
+                  fill = treatment), alpha = 0.2, color = NA) +
+  geom_line(aes(color = treatment), linewidth = 0.8) +
+  scale_color_manual(values = treatment_colors) +
+  scale_fill_manual(values  = treatment_colors) +
+  facet_grid(channel ~ treatment,
+             labeller = labeller(channel = channel_labels)) +
+  labs(
+    title = "Mean ± SD line scans — per treatment, per channel",
+    x     = "Position (aligned_row)",
+    y     = "Mean normalized intensity"
+  ) +
+  guides(color = "none", fill = "none") +
+  theme_bw(base_size = 11) +
+  theme(strip.text = element_text(face = "bold"))
+
+```
+
+---
+
+## Section 3: Membraneyness — log2 fold change enrichment
+
+Ratio of normalized intensity at position 1 versus the mean of positions
+-100 and +100. Higher values indicate more centrally enriched signal
+(consistent with membrane localization).
+
+```{r membraneyness}
+
+peaks_and_valleys <- norm_total %>%
+  filter(aligned_row %in% c(-100, 1, 100))
+
+nest_pandv <- peaks_and_valleys %>%
+  group_by(date, treatment, embryoID, channel) %>%
+  nest()
+
+my_calc2 <- function(df) {
+  df$normalized_intensity[2] /
+    mean(c(df$normalized_intensity[1], df$normalized_intensity[3]))
+}
+
+foldChange_calc <- nest_pandv %>%
+  mutate(fc_enrich = map_dbl(data, my_calc2)) %>%
+  mutate(
+    log2_fc        = log(fc_enrich, base = 2),
+    treatment_type = ifelse(treatment == "L4440", "L4440", "RNAi"),
+    treatment      = factor(treatment, levels = treatment_order)
+  )
+
+summary(foldChange_calc$log2_fc)
+
+```
+
+### 3a. Merged boxplot — x-axis by treatment, faceted by channel
+
+```{r boxplot_merged, fig.height = 6, fig.width = 12}
+
+l4440_ch2_ref <- foldChange_calc %>%
+  ungroup() %>%
+  filter(treatment == "L4440", channel == "ch2") %>%
+  summarize(med = median(log2_fc, na.rm = TRUE)) %>%
+  mutate(channel = "ch2")
+
+p_merged <- ggplot(foldChange_calc,
+                   aes(x = treatment,
+                       y = log2_fc,
+                       fill = treatment_type)) +
+  geom_boxplot(outlier.shape = NA, width = 0.6) +
+  geom_jitter(aes(color = treatment_type),
+              position = position_jitterdodge(jitter.width = 0.5),
+              size = 1.5, alpha = 0.7) +
+  scale_fill_manual(
+    values = type_colors,
+    labels = c("L4440" = "L4440 control", "RNAi" = "RNAi treatment")
+  ) +
+  scale_color_manual(
+    values = c("L4440" = "gray30", "RNAi" = "#1a6fa0"),
+    guide  = "none"
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  geom_hline(data = l4440_ch2_ref, aes(yintercept = med),
+             linetype = "dashed", color = "red", linewidth = 0.6) +
+  scale_y_continuous(limits = c(-0.5, 1.5)) +
+  facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
+  labs(
+    title = "log2 enrichment at position 0 vs ±100",
+    x     = "Treatment",
+    y     = "log2 (intensity at 0 / mean intensity at ±100)",
+    fill  = NULL
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    axis.text.x     = element_text(angle = 35, hjust = 1, face = "italic"),
+    strip.text      = element_text(face = "bold"),
+    legend.position = "top"
+  )
+
+p_merged
+
+```
+
+### 3b. Merged boxplot — x-axis by channel, faceted by treatment
+
+```{r boxplot_by_channel, fig.height = 6, fig.width = 14}
+
+p_by_channel <- ggplot(foldChange_calc,
+                       aes(x = channel,
+                           y = log2_fc,
+                           fill = treatment_type)) +
+  geom_boxplot(outlier.shape = NA, width = 0.6) +
+  geom_jitter(aes(color = treatment_type),
+              position = position_jitterdodge(jitter.width = 0.2),
+              size = 1.5, alpha = 0.7) +
+  scale_fill_manual(
+    values = type_colors,
+    labels = c("L4440" = "L4440 control", "RNAi" = "RNAi treatment")
+  ) +
+  scale_color_manual(
+    values = c("L4440" = "gray30", "RNAi" = "#1a6fa0"),
+    guide  = "none"
+  ) +
+  scale_x_discrete(labels = channel_labels) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  scale_y_continuous(limits = c(-0.5, 1.5)) +
+  facet_wrap(~ treatment, nrow = 2) +
+  labs(
+    title = "log2 enrichment at position 0 vs ±100: split by channel",
+    x     = "mRNA channel",
+    y     = "log2 (intensity at 0 / mean intensity at ±100)",
+    fill  = NULL
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    strip.text      = element_text(face = "bold.italic"),
+    legend.position = "top"
+  )
+
+p_by_channel
+
+```
+
+---
+
+## Summary statistics
+
+```{r summary_stats}
+
+foldChange_calc %>%
+  group_by(treatment, channel) %>%
+  summarise(
+    n          = n(),
+    min_log2fc = round(min(log2_fc,    na.rm = TRUE), 3),
+    median_log2fc = round(median(log2_fc, na.rm = TRUE), 3),
+    mean_log2fc   = round(mean(log2_fc,   na.rm = TRUE), 3),
+    max_log2fc = round(max(log2_fc,    na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  arrange(channel, treatment) %>%
+  print(n = Inf)
+
+```
+
+---
+
+## Statistics - Pairwise Wilcoxon vs L4440
+
+```{r pairwise_wilcox}
+
+# Pairwise Wilcoxon vs L4440 reference (per channel)
+pairwise_stats <- foldChange_calc %>%
+  group_by(channel) %>%
+  wilcox_test(log2_fc ~ treatment, ref.group = "L4440") %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+pairwise_stats
+
+```
+
+---
+
+## Save plots
+
+```{r save_plots}
+
+today    <- format(Sys.Date(), "%y%m%d")
+pdf_path <- paste0("./", today, "_merged_RNAi_unaligned_plots.pdf")
+
+pdf(pdf_path, width = 12, height = 7)
+  print(p_merged)
+  print(p_by_channel)
+dev.off()
+
+cat("Plots saved to:", pdf_path, "\n")
+
+```
+
+---
+
+## Session info
+
+```{r sessionInfo}
+sessionInfo()
+```
