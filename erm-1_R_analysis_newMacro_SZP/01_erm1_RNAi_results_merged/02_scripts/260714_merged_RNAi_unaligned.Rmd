@@ -1,5 +1,5 @@
 ---
-title: "erm-1 RNAi Treatments — Merged Analysis (Unaligned)"
+title: "erm-1 RNAi Treatments — Merged Analysis"
 author: "Sam Zavislan-Pullaro"
 date: "2026-07-14"
 output:
@@ -37,86 +37,86 @@ L4440 control files are loaded once and shared across all treatment comparisons.
 
 col_times <- paste(rep(1:333), sep = "")
 
-# ── Controls (L4440 — loaded once) ──────────────────────────────────────────
-control_1 <- read.table("../erm-1_L4440/01_input/2026-6-22_1458_datafile_for_230713_L4440_RNAi_rep1.txt",
+# L4440
+control_1 <- read.table("../01_input/2026-6-22_1458_datafile_for_230713_L4440_RNAi_rep1.txt",
                         header = FALSE, sep = "\t")
-control_2 <- read.table("../erm-1_L4440/01_input/2026-6-22_153_datafile_for_230828_L4440_RNAi_rep2.txt",
+control_2 <- read.table("../01_input/2026-6-22_153_datafile_for_230828_L4440_RNAi_rep2.txt",
                         header = FALSE, sep = "\t")
-control_3 <- read.table("../erm-1_L4440/01_input/2026-6-22_156_datafile_for_240122_LP306_L4440-rep3.txt",
+control_3 <- read.table("../01_input/2026-6-22_156_datafile_for_240122_LP306_L4440-rep3.txt",
                         header = FALSE, sep = "\t")
 
 colnames(control_1) <- c("file", "channel", col_times)
 colnames(control_2) <- c("file", "channel", col_times)
 colnames(control_3) <- c("file", "channel", col_times)
 
-# ── erm-1 RNAi (3 reps) ─────────────────────────────────────────────────────
-erm1_1 <- read.table("../erm-1_L4440/01_input/2026-6-24_2158_datafile_for_240219_LP306_ERM-1-rep1.txt",
+# erm-1 KD
+erm1_1 <- read.table("../01_input/2026-6-24_2158_datafile_for_240219_LP306_ERM-1-rep1.txt",
                      header = FALSE, sep = "\t")
-erm1_2 <- read.table("../erm-1_L4440/01_input/2026-6-24_222_datafile_for_240221_LP306_ERM-1_RNAi-rep2.txt",
+erm1_2 <- read.table("../01_input/2026-6-24_222_datafile_for_240221_LP306_ERM-1_RNAi-rep2.txt",
                      header = FALSE, sep = "\t")
-erm1_3 <- read.table("../erm-1_L4440/01_input/2026-6-24_224_datafile_for_240222_LP306_ERM-1_RNAi-rep3.txt",
+erm1_3 <- read.table("../01_input/2026-6-24_224_datafile_for_240222_LP306_ERM-1_RNAi-rep3.txt",
                      header = FALSE, sep = "\t")
 
 colnames(erm1_1) <- c("file", "channel", col_times)
 colnames(erm1_2) <- c("file", "channel", col_times)
 colnames(erm1_3) <- c("file", "channel", col_times)
 
-# ── klp-18 RNAi (3 reps) ────────────────────────────────────────────────────
-klp18_1 <- read.table("../klp-18_L4400_newMacro/01_input/2026-6-22_1254_datafile_for_231207_LP306_klp-18_rep1.txt",
+# klp-18 KD
+klp18_1 <- read.table("../01_input/2026-6-22_1254_datafile_for_231207_LP306_klp-18_rep1.txt",
                       header = FALSE, sep = "\t")
-klp18_2 <- read.table("../klp-18_L4400_newMacro/01_input/2026-6-22_1259_datafile_for_231208_LP306_klp-18_rep2.txt",
+klp18_2 <- read.table("../01_input/2026-6-22_1259_datafile_for_231208_LP306_klp-18_rep2.txt",
                       header = FALSE, sep = "\t")
-klp18_3 <- read.table("../klp-18_L4400_newMacro/01_input/2026-6-22_135_datafile_for_231224_LP306_klp-18_RNAi-rep3.txt",
+klp18_3 <- read.table("../01_input/2026-6-22_135_datafile_for_231224_LP306_klp-18_RNAi-rep3.txt",
                       header = FALSE, sep = "\t")
 
 colnames(klp18_1) <- c("file", "channel", col_times)
 colnames(klp18_2) <- c("file", "channel", col_times)
 colnames(klp18_3) <- c("file", "channel", col_times)
 
-# ── klp-19 RNAi (3 reps) ────────────────────────────────────────────────────
-klp19_1 <- read.table("../klp-19_L4440/01_input/2026-6-22_1335_datafile_for_231228_LP306_KLP-19-rep1.txt",
+# klp-19 KD
+klp19_1 <- read.table("../01_input/2026-6-22_1335_datafile_for_231228_LP306_KLP-19-rep1.txt",
                       header = FALSE, sep = "\t")
-klp19_2 <- read.table("../klp-19_L4440/01_input/2026-6-23_174_datafile_for_240122_LP306_KLP-19-rep2.txt",
+klp19_2 <- read.table("../01_input/2026-6-23_174_datafile_for_240122_LP306_KLP-19-rep2.txt",
                       header = FALSE, sep = "\t")
-klp19_3 <- read.table("../klp-19_L4440/01_input/2026-6-23_1712_datafile_for_240123_LP306_KLP-19_rep3.txt",
+klp19_3 <- read.table("../01_input/2026-6-23_1712_datafile_for_240123_LP306_KLP-19_rep3.txt",
                       header = FALSE, sep = "\t")
 
 colnames(klp19_1) <- c("file", "channel", col_times)
 colnames(klp19_2) <- c("file", "channel", col_times)
 colnames(klp19_3) <- c("file", "channel", col_times)
 
-# ── klp-9 RNAi (3 reps) ─────────────────────────────────────────────────────
-klp9_1 <- read.table("../klp-9_L4440_newMacro/01_input/2026-6-23_1559_datafile_for_231207_LP306_KLP-9.txt",
+# klp-9 KD
+klp9_1 <- read.table("../01_input/2026-6-23_1559_datafile_for_231207_LP306_KLP-9.txt",
                      header = FALSE, sep = "\t")
-klp9_2 <- read.table("../klp-9_L4440_newMacro/01_input/2026-6-23_162_datafile_for_231208_LP306_KLP-9_rep2.txt",
+klp9_2 <- read.table("../01_input/2026-6-23_162_datafile_for_231208_LP306_KLP-9_rep2.txt",
                      header = FALSE, sep = "\t")
-klp9_3 <- read.table("../klp-9_L4440_newMacro/01_input/2026-6-23_166_datafile_for_231224_LP306_klp-9_rep3.txt",
+klp9_3 <- read.table("../01_input/2026-6-23_166_datafile_for_231224_LP306_klp-9_rep3.txt",
                      header = FALSE, sep = "\t")
 
 colnames(klp9_1) <- c("file", "channel", col_times)
 colnames(klp9_2) <- c("file", "channel", col_times)
 colnames(klp9_3) <- c("file", "channel", col_times)
 
-# ── nmy-1 RNAi (3 reps) ─────────────────────────────────────────────────────
-nmy1_1 <- read.table("../nmy-1_L4440/01_input/2026-6-24_117_datafile_for_240108_NMY-1_RNAi-rep1.txt",
+# nmy-1 KD
+nmy1_1 <- read.table("../01_input/2026-6-24_117_datafile_for_240108_NMY-1_RNAi-rep1.txt",
                      header = FALSE, sep = "\t")
-nmy1_2 <- read.table("../nmy-1_L4440/01_input/2026-6-24_1116_datafile_for_240217_LP306_NMY-1_RNAi-rep2.txt",
+nmy1_2 <- read.table("../01_input/2026-6-24_1116_datafile_for_240217_LP306_NMY-1_RNAi-rep2.txt",
                      header = FALSE, sep = "\t")
-nmy1_3 <- read.table("../nmy-1_L4440/01_input/2026-6-24_1124_datafile_for_240221_LP306_NMY-1_RNAi-rep3.txt",
+nmy1_3 <- read.table("../01_input/2026-6-24_1124_datafile_for_240221_LP306_NMY-1_RNAi-rep3.txt",
                      header = FALSE, sep = "\t")
 
 colnames(nmy1_1) <- c("file", "channel", col_times)
 colnames(nmy1_2) <- c("file", "channel", col_times)
 colnames(nmy1_3) <- c("file", "channel", col_times)
 
-# ── nmy-2 RNAi (4 reps) ─────────────────────────────────────────────────────
-nmy2_1 <- read.table("../nmy-2_L4440/01_input/2026-6-24_1156_datafile_for_240113_NMY-2_RNAi-rep1.txt",
+# nmy-2 KD
+nmy2_1 <- read.table("../01_input/2026-6-24_1156_datafile_for_240113_NMY-2_RNAi-rep1.txt",
                      header = FALSE, sep = "\t")
-nmy2_2 <- read.table("../nmy-2_L4440/01_input/2026-6-24_122_datafile_for_240122_LP306_NMY-2.txt",
+nmy2_2 <- read.table("../01_input/2026-6-24_122_datafile_for_240122_LP306_NMY-2.txt",
                      header = FALSE, sep = "\t")
-nmy2_3 <- read.table("../nmy-2_L4440/01_input/2026-6-24_129_datafile_for_240123_NMY-2_RNAi-rep2.txt",
+nmy2_3 <- read.table("../01_input/2026-6-24_129_datafile_for_240123_NMY-2_RNAi-rep2.txt",
                      header = FALSE, sep = "\t")
-nmy2_4 <- read.table("../nmy-2_L4440/01_input/2026-6-24_147_datafile_for_240221_LP306_NMY-2_RNAi-rep3.txt",
+nmy2_4 <- read.table("../01_input/2026-6-24_147_datafile_for_240221_LP306_NMY-2_RNAi-rep3.txt",
                      header = FALSE, sep = "\t")
 
 colnames(nmy2_1) <- c("file", "channel", col_times)
@@ -124,14 +124,14 @@ colnames(nmy2_2) <- c("file", "channel", col_times)
 colnames(nmy2_3) <- c("file", "channel", col_times)
 colnames(nmy2_4) <- c("file", "channel", col_times)
 
-# ── unc-116 RNAi (4 reps) ───────────────────────────────────────────────────
-unc116_1 <- read.table("../unc-116_L4440/01_input/2026-6-24_1850_datafile_for_231228_LP306_UNC-116-rep1.txt",
+# unc-116 KD
+unc116_1 <- read.table("../01_input/2026-6-24_1850_datafile_for_231228_LP306_UNC-116-rep1.txt",
                        header = FALSE, sep = "\t")
-unc116_2 <- read.table("../unc-116_L4440/01_input/2026-6-24_1854_datafile_for_240106_LP306_UNC-116_RNAi-rep2.txt",
+unc116_2 <- read.table("../01_input/2026-6-24_1854_datafile_for_240106_LP306_UNC-116_RNAi-rep2.txt",
                        header = FALSE, sep = "\t")
-unc116_3 <- read.table("../unc-116_L4440/01_input/2026-6-24_1856_datafile_for_240120_LP306_UNC-116_RNAi-rep3.txt",
+unc116_3 <- read.table("../01_input/2026-6-24_1856_datafile_for_240120_LP306_UNC-116_RNAi-rep3.txt",
                        header = FALSE, sep = "\t")
-unc116_4 <- read.table("../unc-116_L4440/01_input/2026-6-24_191_datafile_for_240123_UNC116-rep4.txt",
+unc116_4 <- read.table("../01_input/2026-6-24_191_datafile_for_240123_UNC116-rep4.txt",
                        header = FALSE, sep = "\t")
 
 colnames(unc116_1) <- c("file", "channel", col_times)
@@ -139,14 +139,14 @@ colnames(unc116_2) <- c("file", "channel", col_times)
 colnames(unc116_3) <- c("file", "channel", col_times)
 colnames(unc116_4) <- c("file", "channel", col_times)
 
-# ── bmk-1 RNAi (4 reps) ─────────────────────────────────────────────────────
-bmk1_1 <- read.table("../bmk-1_L4440_newMacro/01_input/2026-6-22_1528_datafile_for_220719_LP306_bmk-1_RNAi.txt",
+# bmk-1 RNAi KD
+bmk1_1 <- read.table("../01_input/2026-6-22_1528_datafile_for_220719_LP306_bmk-1_RNAi.txt",
                      header = FALSE, sep = "\t")
-bmk1_2 <- read.table("../bmk-1_L4440_newMacro/01_input/2026-6-22_1536_datafile_for_230408_LP306_BMK-1_rep1.txt",
+bmk1_2 <- read.table("../01_input/2026-6-22_1536_datafile_for_230408_LP306_BMK-1_rep1.txt",
                      header = FALSE, sep = "\t")
-bmk1_3 <- read.table("../bmk-1_L4440_newMacro/01_input/2026-6-22_1544_datafile_for_231107_LP306_BMK-1_rep2.txt",
+bmk1_3 <- read.table("../01_input/2026-6-22_1544_datafile_for_231107_LP306_BMK-1_rep2.txt",
                      header = FALSE, sep = "\t")
-bmk1_4 <- read.table("../bmk-1_L4440_newMacro/01_input/2026-6-22_1550_datafile_for_231113_LP306_BMK-1_rep3.txt",
+bmk1_4 <- read.table("../01_input/2026-6-22_1550_datafile_for_231113_LP306_BMK-1_rep3.txt",
                      header = FALSE, sep = "\t")
 
 colnames(bmk1_1) <- c("file", "channel", col_times)
@@ -159,6 +159,8 @@ colnames(bmk1_4) <- c("file", "channel", col_times)
 ---
 
 ## Create annotation columns and add timepoints
+
+Timepoints are treated as positions along line scan
 
 ```{r annotate}
 
@@ -345,9 +347,9 @@ ggplot(norm_total,
 
 ---
 
-## Section 2: Mean ± SD line scans
+## Section 2: Mean +- SD line scans
 
-### 2a. All treatments overlaid — one panel per channel
+### 2a. All treatments overlaid, one panel per channel
 
 ```{r linescans_mean_overlaid, fig.height = 6, fig.width = 12}
 
@@ -385,7 +387,7 @@ ggplot(mean_signal,
 
 ```
 
-### 2b. L4440 vs each RNAi treatment - faceted grid
+### 2b. L4440 vs each RNAi treatment, faceted grid
 
 ```{r linescans_mean_faceted, fig.height = 10, fig.width = 14}
 
@@ -400,8 +402,8 @@ ggplot(mean_signal,
   facet_grid(channel ~ treatment,
              labeller = labeller(channel = channel_labels)) +
   labs(
-    title = "Mean ± SD line scans — per treatment, per channel",
-    x     = "Position (aligned_row)",
+    title = "Mean +- SD line scans, per treatment, per channel",
+    x     = "Position",
     y     = "Mean normalized intensity"
   ) +
   guides(color = "none", fill = "none") +
@@ -412,13 +414,13 @@ ggplot(mean_signal,
 
 ---
 
-## Section 3: Membraneyness — log2 fold change enrichment
+## Section 3: log2 fold change enrichment
 
 Ratio of normalized intensity at position 1 versus the mean of positions
--100 and +100. Higher values indicate more centrally enriched signal
+-100 and +100. Higher values indicate more enriched localization signal
 (consistent with membrane localization).
 
-```{r membraneyness}
+```{r}
 
 peaks_and_valleys <- norm_total %>%
   filter(aligned_row %in% c(-100, 1, 100))
@@ -444,7 +446,7 @@ summary(foldChange_calc$log2_fc)
 
 ```
 
-### 3a. Merged boxplot — x-axis by treatment, faceted by channel
+### 3a. Merged boxplot, x-axis by treatment, faceted by channel
 
 ```{r boxplot_merged, fig.height = 6, fig.width = 12}
 
@@ -492,7 +494,7 @@ p_merged
 
 ```
 
-### 3b. Merged boxplot — x-axis by channel, faceted by treatment
+### 3b. Merged boxplot, x-axis by channel, faceted by treatment
 
 ```{r boxplot_by_channel, fig.height = 6, fig.width = 14}
 

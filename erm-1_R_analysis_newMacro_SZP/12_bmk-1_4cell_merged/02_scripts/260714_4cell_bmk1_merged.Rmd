@@ -46,28 +46,28 @@ set_cols <- function(df) {
 }
 
 # ── ABa-ABp controls (4 reps) ────────────────────────────────────────────────
-abp_ctrl_1 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-11_1324_datafile_for_231107_LP306_L4440.txt",       header = FALSE, sep = "\t"))
-abp_ctrl_2 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-11_1252_datafile_for_230713_L4440_RNAi_rep1.txt",    header = FALSE, sep = "\t"))
-abp_ctrl_3 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-11_133_datafile_for_230828_L4440_RNAi_rep2.txt",     header = FALSE, sep = "\t"))
-abp_ctrl_4 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-11_1337_datafile_for_240122_LP306_L4440-rep3.txt",   header = FALSE, sep = "\t"))
+abp_ctrl_1 <- set_cols(read.table("../01_input/2026-7-11_1324_datafile_for_231107_LP306_L4440.txt",       header = FALSE, sep = "\t"))
+abp_ctrl_2 <- set_cols(read.table("../01_input/2026-7-11_1252_datafile_for_230713_L4440_RNAi_rep1.txt",    header = FALSE, sep = "\t"))
+abp_ctrl_3 <- set_cols(read.table("../01_input/2026-7-11_133_datafile_for_230828_L4440_RNAi_rep2.txt",     header = FALSE, sep = "\t"))
+abp_ctrl_4 <- set_cols(read.table("../01_input/2026-7-11_1337_datafile_for_240122_LP306_L4440-rep3.txt",   header = FALSE, sep = "\t"))
 
 # ── ABa-ABp bmk-1 RNAi (4 reps) ─────────────────────────────────────────────
-abp_test_1 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-14_126_datafile_for_220719_LP306_bmk-1_RNAi.txt",    header = FALSE, sep = "\t"))
-abp_test_2 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-14_1216_datafile_for_230408_LP306_BMK-1_rep1.txt",   header = FALSE, sep = "\t"))
-abp_test_3 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-14_1222_datafile_for_231107_LP306_BMK-1_rep2.txt",   header = FALSE, sep = "\t"))
-abp_test_4 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-ABp/01_input/2026-7-14_1225_datafile_for_231113_LP306_BMK-1_rep3.txt",   header = FALSE, sep = "\t"))
+abp_test_1 <- set_cols(read.table("../01_input/2026-7-14_126_datafile_for_220719_LP306_bmk-1_RNAi.txt",    header = FALSE, sep = "\t"))
+abp_test_2 <- set_cols(read.table("../01_input/2026-7-14_1216_datafile_for_230408_LP306_BMK-1_rep1.txt",   header = FALSE, sep = "\t"))
+abp_test_3 <- set_cols(read.table("../01_input/2026-7-14_1222_datafile_for_231107_LP306_BMK-1_rep2.txt",   header = FALSE, sep = "\t"))
+abp_test_4 <- set_cols(read.table("../01_input/2026-7-14_1225_datafile_for_231113_LP306_BMK-1_rep3.txt",   header = FALSE, sep = "\t"))
 
 # ── ABa-EMS controls (4 reps) ────────────────────────────────────────────────
-ems_ctrl_1 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-11_1329_datafile_for_231107_LP306_L4440.txt",        header = FALSE, sep = "\t"))
-ems_ctrl_2 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-11_1257_datafile_for_230713_L4440_RNAi_rep1.txt",    header = FALSE, sep = "\t"))
-ems_ctrl_3 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-11_1311_datafile_for_230828_L4440_RNAi_rep2.txt",    header = FALSE, sep = "\t"))
-ems_ctrl_4 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-11_1346_datafile_for_240122_LP306_L4440-rep3.txt",   header = FALSE, sep = "\t"))
+ems_ctrl_1 <- set_cols(read.table("../01_input/2026-7-11_1329_datafile_for_231107_LP306_L4440.txt",        header = FALSE, sep = "\t"))
+ems_ctrl_2 <- set_cols(read.table("../01_input/2026-7-11_1257_datafile_for_230713_L4440_RNAi_rep1.txt",    header = FALSE, sep = "\t"))
+ems_ctrl_3 <- set_cols(read.table("../01_input/2026-7-11_1311_datafile_for_230828_L4440_RNAi_rep2.txt",    header = FALSE, sep = "\t"))
+ems_ctrl_4 <- set_cols(read.table("../01_input/2026-7-11_1346_datafile_for_240122_LP306_L4440-rep3.txt",   header = FALSE, sep = "\t"))
 
 # ── ABa-EMS bmk-1 RNAi (4 reps) ─────────────────────────────────────────────
-ems_test_1 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-14_1233_datafile_for_220719_LP306_bmk-1_RNAi.txt",   header = FALSE, sep = "\t"))
-ems_test_2 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-14_1238_datafile_for_230408_LP306_BMK-1_rep1.txt",   header = FALSE, sep = "\t"))
-ems_test_3 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-14_1241_datafile_for_231107_LP306_BMK-1_rep2.txt",   header = FALSE, sep = "\t"))
-ems_test_4 <- set_cols(read.table("../bmk-1_RNAi_4-cell_ABa-EMS/01_input/2026-7-14_1244_datafile_for_231113_LP306_BMK-1_rep3.txt",   header = FALSE, sep = "\t"))
+ems_test_1 <- set_cols(read.table("../01_input/2026-7-14_1233_datafile_for_220719_LP306_bmk-1_RNAi.txt",   header = FALSE, sep = "\t"))
+ems_test_2 <- set_cols(read.table("../01_input/2026-7-14_1238_datafile_for_230408_LP306_BMK-1_rep1.txt",   header = FALSE, sep = "\t"))
+ems_test_3 <- set_cols(read.table("../01_input/2026-7-14_1241_datafile_for_231107_LP306_BMK-1_rep2.txt",   header = FALSE, sep = "\t"))
+ems_test_4 <- set_cols(read.table("../01_input/2026-7-14_1244_datafile_for_231113_LP306_BMK-1_rep3.txt",   header = FALSE, sep = "\t"))
 
 ```
 
