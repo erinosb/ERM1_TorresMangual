@@ -1,0 +1,3 @@
+"gene","statistic","p.value","method","alternative"
+"erm-1 mRNA",94,0.625046440789527,"Wilcoxon rank sum test with continuity correction","two.sided"
+"set-3 mRNA",74,0.625105599550655,"Wilcoxon rank sum test with continuity correction","two.sided"
