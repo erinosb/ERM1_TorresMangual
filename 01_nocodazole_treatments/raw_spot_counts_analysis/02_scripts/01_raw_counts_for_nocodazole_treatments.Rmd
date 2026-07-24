@@ -1,0 +1,259 @@
+---
+title: "Fig1. Quantifiaction of mRNA in nocodazole treated embryos `r format(Sys.Date(), '%Y-%m-%d')`"
+author: "Naly Torres"
+date: "25/04/2026"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+
+library(png)
+library(knitr)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(ggsignif)
+library(svglite)
+library(ggridges)
+library(scales)
+library(readr)
+library(RColorBrewer)
+library(tools)
+library(tidyverse)
+library(dunn.test)
+
+
+
+
+```
+
+### Part 1 ### 
+
+```{r}
+
+# Parent directory containing CSV files for all conditions
+parent_directory <- "/Users/nalytorres/Library/CloudStorage/OneDrive-Colostate/OnishLab - NalyTorres/00_2026_ERM1_Torres_et_al/06_GitHub/Fig1_nocodazole/Fig.1E_nocodazole_total_abundance"
+
+
+# Function to read CSV, replace Image ID with CSV name, and modify column names
+read_modify_csv <- function(file_path, subdirectory) {
+  my_df <- read.csv(file_path)
+  my_df$Image_ID <- basename(file_path)
+  my_df$subdirectory <- subdirectory
+  my_df <- my_df[, colnames(my_df) != "X"]
+  current_colnames <- colnames(my_df)
+  new_colnames <- gsub("\\.", " ", current_colnames)
+  colnames(my_df) <- new_colnames
+  return(my_df)
+}
+
+# List all subdirectories (conditions) in the parent directory
+subdirectories <- list.dirs(parent_directory, full.names = FALSE, recursive = FALSE)
+
+# Initialize an empty list to store data frames
+all_data <- list()
+
+# Loop through subdirectories (conditions)
+for (subdirectory in subdirectories) {
+  # List all CSV files in the current subdirectory
+  csv_files <- list.files(path = file.path(parent_directory, subdirectory), pattern = "*.csv", full.names = TRUE)
+  
+  # Loop through CSV files, read data, replace Image ID, and modify column names
+  for (file_path in csv_files) {
+    current_data <- read_modify_csv(file_path, subdirectory)
+    all_data[[file_path]] <- current_data
+  }
+}
+
+# Combine all data frames into one data frame
+combined_data <- bind_rows(all_data)
+
+str(combined_data)
+```
+
+
+```{r}
+# Function to read CSV, replace Image ID with CSV name, and modify column names
+read_modify_csv <- function(file_path, subdirectory) {
+  my_df <- read.csv(file_path)
+  my_df$Image_ID <- basename(file_path)
+  my_df$subdirectory <- subdirectory
+  my_df <- my_df[, colnames(my_df) != "X"]
+  current_colnames <- colnames(my_df)
+  new_colnames <- gsub("\\.", " ", current_colnames)
+  colnames(my_df) <- new_colnames
+  
+  # Ensure Image_ID is treated as a character column
+  my_df$Image_ID <- as.character(my_df$Image_ID)
+  
+  return(my_df)
+}
+
+# List all subdirectories (conditions) in the parent directory
+subdirectories <- list.dirs(parent_directory, full.names = FALSE, recursive = FALSE)
+
+# Initialize an empty list to store data frames
+all_data <- list()
+
+# Loop through subdirectories (conditions)
+for (subdirectory in subdirectories) {
+  # List all CSV files in the current subdirectory
+  csv_files <- list.files(path = file.path(parent_directory, subdirectory), pattern = "*.csv", full.names = TRUE)
+  
+  # Loop through CSV files, read data, replace Image ID, and modify column names
+  for (file_path in csv_files) {
+    current_data <- read_modify_csv(file_path, subdirectory)
+    all_data[[file_path]] <- current_data
+  }
+}
+
+# Combine all data frames into one data frame
+combined_data <- bind_rows(all_data)
+
+# View the combined data
+combined_data
+
+
+write_csv(combined_data, file.path(parent_directory, "raw_spot_counts_nocodazole_treatment.csv"))
+```
+
+
+
+```{r}
+
+
+df <- combined_data %>%
+  rename(
+    set3_mRNA = `set 3_mRNA total molecules`,
+    erm1_mRNA = `erm 1_mRNA total molecules`
+  ) %>%
+  mutate(
+    nocodazole = recode(
+      subdirectory,
+      "0uM_nocodazole_total_abundance"   = "0 µM Nocodazole",
+      "150uM_nocodazole_total_abundance" = "150 µM Nocodazole"
+    )
+  )
+
+df_long <- df %>%
+  pivot_longer(
+    cols = c(set3_mRNA, erm1_mRNA),
+    names_to = "mRNA",
+    values_to = "total_molecules"
+  ) %>%
+  mutate(
+    mRNA = factor(mRNA, levels = c("set3_mRNA", "erm1_mRNA")),
+    nocodazole = factor(nocodazole,
+                        levels = c("0 µM Nocodazole", "150 µM Nocodazole"))
+  )
+
+
+
+
+library(ggpubr)
+
+# Create plot with violin + box
+p <- ggplot(df_long, aes(x = nocodazole, y = total_molecules, fill = nocodazole)) +
+  geom_violin(trim = FALSE, alpha = 0.6) +
+  geom_boxplot(width = 0.1, fill = "white", outlier.shape = NA) +
+  geom_jitter(width = 0.1, size = 2, alpha = 0.8) +
+  facet_wrap(~ mRNA, scales = "fixed",
+             labeller = as_labeller(c(
+               set3_mRNA = "set-3 mRNA",
+               erm1_mRNA = "erm-1 mRNA"
+             ))) +
+  theme_classic() +
+  scale_fill_manual(
+  values = c(
+    "0 µM Nocodazole"   = "grey70", 
+    "150 µM Nocodazole"  = "lightblue")
+) +
+  labs(
+    x = "",
+    y = "Total mRNA molecules",
+    title = "erm-1 mRNA abundance ± nocodazole"
+  ) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  axis.title.y = element_text(size = 16, face = "bold"),
+    strip.text = element_text(size = 16, face = "bold"),
+    axis.text.x = element_text(size = 14, face = "bold", angle = 15, vjust = 1, hjust = 1),
+    axis.text.y = element_text(size = 14, face = "bold")
+  )
+
+
+
+unique(df$subdirectory)
+df_long %>%
+  count(mRNA, nocodazole)
+
+ggsave(
+  filename = "erm1_set3_mRNA_nocodazole_plot.svg",
+  plot = p,
+  width = 6,
+  height = 6
+)
+
+p
+
+```
+
+```{r}
+summary_stats <- df_long %>%
+  group_by(mRNA, nocodazole) %>%
+  summarise(
+    mean = mean(total_molecules, na.rm = TRUE),
+    sd = sd(total_molecules, na.rm = TRUE),
+    n = n(),
+    sem = sd / sqrt(n),
+    .groups = "drop"
+  )
+
+summary_stats
+
+write.csv(summary_stats, file.path(parent_directory, "erm1_set3_mRNA_summary_stats.csv"), row.names = FALSE)
+```
+
+
+Doing Wilcox here because there are only two groups. 
+```{r}
+library(broom)
+library(dplyr)
+
+erm1_test <- wilcox.test(
+  `erm 1_mRNA total molecules` ~ subdirectory,
+  data = combined_data,
+  exact = FALSE
+)
+
+set3_test <- wilcox.test(
+  `set 3_mRNA total molecules` ~ subdirectory,
+  data = combined_data,
+  exact = FALSE
+)
+
+stats_table <- bind_rows(
+  tidy(erm1_test) %>% mutate(gene = "erm-1 mRNA", .before = 1),
+  tidy(set3_test) %>% mutate(gene = "set-3 mRNA", .before = 1)
+) %>%
+  select(gene, statistic, p.value, method, alternative)
+
+stats_table
+
+# Save for metadata
+write.csv(stats_table, file.path(parent_directory, "wilcoxon_stats_table.csv"), row.names = FALSE)
+```
+
+
+
+
+
+
+
