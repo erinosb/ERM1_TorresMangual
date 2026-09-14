@@ -1,13 +1,11 @@
 ---
 title: "erm-1 RNAi Treatments — Merged Analysis"
 author: "Sam Zavislan-Pullaro"
-date: "2026-07-14"
-output:
-  html_document:
+date: "2026-09-14"
+output: 
+  github_document:
     toc: true
     toc_depth: 4
-    toc_float: true
-    theme: flatly
 ---
 
 ```{r global_options, include=FALSE}
@@ -262,6 +260,7 @@ total_align_long <- dt %>%
 cat("Total rows:", nrow(total_align_long), "\n")
 cat("Unique embryo IDs:", n_distinct(total_align_long$unique_id), "\n")
 
+
 ```
 
 ---
@@ -325,7 +324,7 @@ All embryo-level line scans, faceted by channel and treatment.
 
 ```{r linescans_individual, fig.height = 12, fig.width = 14}
 
-p_linescan_individual <- ggplot(norm_total,
+linescan_individual <- ggplot(norm_total,
        aes(x = aligned_row, y = normalized_intensity,
            group = interaction(date, embryoID),
            color = treatment)) +
@@ -343,7 +342,7 @@ p_linescan_individual <- ggplot(norm_total,
   theme_bw(base_size = 11) +
   theme(strip.text = element_text(face = "bold"))
 
-p_linescan_individual
+linescan_individual
 
 ```
 
@@ -367,17 +366,49 @@ mean_signal <- norm_total %>%
     ymeanmin = mean_signal - sd_signal
   )
 
-ggplot(mean_signal,
+```
+
+```{r}
+
+# ggplot(mean_signal,
+#        aes(x = aligned_row, y = mean_signal,
+#            color = treatment, fill = treatment,
+#            group = treatment)) +
+#   geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax), alpha = 0.15, color = NA) +
+#   geom_line(linewidth = 0.8) +
+#   scale_color_manual(values = treatment_colors) +
+#   scale_fill_manual(values  = treatment_colors) +
+#   facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
+#   labs(
+#     title  = "Mean ± SD normalized line scans — all treatments",
+#     x      = "Position (aligned_row)",
+#     y      = "Mean normalized intensity",
+#     color  = "Treatment",
+#     fill   = "Treatment"
+#   ) +
+#   theme_bw(base_size = 12) +
+#   theme(strip.text = element_text(face = "bold"),
+#         legend.position = "right")
+
+```
+### 2b. L4440 vs kinesins KDs
+
+```{r kinesins_mean_overlaid, fig.height = 6, fig.width = 8}
+kinesin_treatments <- c("L4440", "klp-9", "bmk-1", "klp-18", "klp-19", "unc-116")
+
+mean_signal_kinesins <- mean_signal %>%
+  filter(treatment %in% kinesin_treatments)
+
+mean_signal_linescan <- ggplot(mean_signal_kinesins,
        aes(x = aligned_row, y = mean_signal,
            color = treatment, fill = treatment,
            group = treatment)) +
-  geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax), alpha = 0.15, color = NA) +
   geom_line(linewidth = 0.8) +
   scale_color_manual(values = treatment_colors) +
   scale_fill_manual(values  = treatment_colors) +
   facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
   labs(
-    title  = "Mean ± SD normalized line scans — all treatments",
+    title  = "Mean normalized line scans — L4440 vs kinesin RNAi",
     x      = "Position (aligned_row)",
     y      = "Mean normalized intensity",
     color  = "Treatment",
@@ -387,13 +418,14 @@ ggplot(mean_signal,
   theme(strip.text = element_text(face = "bold"),
         legend.position = "right")
 
+mean_signal_linescan
 ```
 
-### 2b. L4440 vs each RNAi treatment, faceted grid
+### 2c. L4440 vs each RNAi treatment, faceted grid
 
 ```{r linescans_mean_faceted, fig.height = 10, fig.width = 14}
 
-ggplot(mean_signal,
+mean_linescan <-ggplot(mean_signal,
        aes(x = aligned_row, y = mean_signal,
            group = treatment)) +
   geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax,
@@ -412,133 +444,272 @@ ggplot(mean_signal,
   theme_bw(base_size = 11) +
   theme(strip.text = element_text(face = "bold"))
 
+mean_linescan
 ```
-```{r linescans_mean_merged, fig.height = 10, fig.width = 14}
 
-channel_colors <- c(
-  "ch1" = "gray30",    # gray
-  "ch2" = "#3E7CB1"    # blue
-)
-
-linescans_mean_merged <- ggplot(mean_signal,
-       aes(x = aligned_row, y = mean_signal,
-           group = channel)) +
-  geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax,
-                  fill = channel), alpha = 0.2, color = NA) +
-  geom_line(aes(color = channel), linewidth = 0.8) +
-  scale_color_manual(values = channel_colors) +
-  scale_fill_manual(values  = channel_colors) +
-  facet_grid(~ treatment) +
-  labs(
-    title = "Mean +- SD line scans, per treatment, overlaid by channel",
-    x     = "Position",
-    y     = "Mean normalized intensity",
-    color = "channel",
-    fill  = "channel"
-  ) +
-  theme_bw(base_size = 11) +
-  theme(strip.text = element_text(face = "bold"))
-
-linescans_mean_merged
-
-```
-```{r linescans_mean_merged_grid, fig.height = 14, fig.width = 12}
-library(dplyr)
-
-# Keep only the erm-1 channel (ch2)
-df_ch2 <- mean_signal %>% filter(channel == "ch2")
-
-# Separate treatments from the L4440 control
-treatments  <- setdiff(unique(df_ch2$treatment), "L4440")
-df_treat    <- df_ch2 %>% filter(treatment %in% treatments) %>%
-  mutate(condition = "treatment")
-df_control  <- df_ch2 %>% filter(treatment == "L4440")
-
-# Replicate the L4440 control data into every treatment's facet panel
-df_control_rep <- purrr::map_dfr(treatments, function(t) {
-  df_control %>% mutate(treatment = t, condition = "control")
-})
-
-# Combine into one plotting dataframe
-plot_data <- bind_rows(df_treat, df_control_rep)
-
-condition_colors <- c(
-  "treatment" = "#3E7CB1",  # blue
-  "control"   = "gray30"    # gray
-)
-
-condition_labels <- c(
-  "treatment" = "RNAi",
-  "control"   = "L4440"
-)
-
-linescans_mean_merged_grid <- ggplot(plot_data,
-       aes(x = aligned_row, y = mean_signal, group = condition)) +
-  geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax, fill = condition),
-              alpha = 0.2, color = NA) +
-  geom_line(aes(color = condition), linewidth = 0.8) +
-  scale_color_manual(values = condition_colors, labels = condition_labels) +
-  scale_fill_manual(values  = condition_colors, labels = condition_labels) +
-  facet_wrap(~ treatment, ncol = 4) +
-  labs(
-    title = "Mean +- SD line scans, erm-1 mRNA, RNAi vs L4440 control",
-    x     = "Position",
-    y     = "Mean normalized intensity",
-    color = "condition",
-    fill  = "condition"
-  ) +
-  theme_bw(base_size = 11) +
-  theme(strip.text = element_text(face = "bold"))
-
-linescans_mean_merged_grid
-```
 ---
 
 ## Section 3: log2 fold change enrichment
 
-Ratio of normalized intensity at position 1 versus the mean of positions
+Ratio of normalized intensity at position 0 versus the mean of positions
 -100 and +100. Higher values indicate more enriched localization signal
 (consistent with membrane localization).
 
 ```{r}
 
-peaks_and_valleys <- norm_total %>%
-  filter(aligned_row %in% c(-100, 1, 100))
-
-nest_pandv <- peaks_and_valleys %>%
-  group_by(date, treatment, embryoID, channel) %>%
-  nest()
-
-my_calc2 <- function(df) {
-  df$normalized_intensity[2] /
-    mean(c(df$normalized_intensity[1], df$normalized_intensity[3]))
-}
-
-foldChange_calc <- nest_pandv %>%
-  mutate(fc_enrich = map_dbl(data, my_calc2)) %>%
-  mutate(
-    log2_fc        = log(fc_enrich, base = 2),
-    treatment_type = ifelse(treatment == "L4440", "L4440", "RNAi"),
-    treatment      = factor(treatment, levels = treatment_order)
-  )
-
-summary(foldChange_calc$log2_fc)
+# peaks_and_valleys <- norm_total %>%
+#   filter(aligned_row %in% c(-100, 0, 100))
+# 
+# nest_pandv <- peaks_and_valleys %>%
+#   group_by(date, treatment, embryoID, channel) %>%
+#   nest()
+# 
+# my_calc2 <- function(df) {
+#   df$normalized_intensity[2] /
+#     mean(c(df$normalized_intensity[1], df$normalized_intensity[3]))
+# }
+# 
+# foldChange_calc <- nest_pandv %>%
+#   mutate(fc_enrich = map_dbl(data, my_calc2)) %>%
+#   mutate(
+#     log2_fc        = log(fc_enrich, base = 2),
+#     treatment_type = ifelse(treatment == "L4440", "L4440", "RNAi"),
+#     treatment      = factor(treatment, levels = treatment_order)
+#   )
+# 
+# summary(foldChange_calc$log2_fc)
+# 
+# foldChange_calc
 
 ```
 
 ### 3a. Merged boxplot, x-axis by treatment, faceted by channel
 
-```{r boxplot_merged, fig.height = 6, fig.width = 12}
+```{r boxplot_merged, fig.height = 6, fig.width = 8}
 
-l4440_ch2_ref <- foldChange_calc %>%
-  ungroup() %>%
-  filter(treatment == "L4440", channel == "ch2") %>%
-  summarize(med = median(log2_fc, na.rm = TRUE)) %>%
-  mutate(channel = "ch2")
+# l4440_ch2_ref <- foldChange_calc %>%
+#   ungroup() %>%
+#   filter(treatment == "L4440", channel == "ch2") %>%
+#   summarize(med = median(log2_fc, na.rm = TRUE)) %>%
+#   mutate(channel = "ch2")
+# 
+# p_merged <- ggplot(foldChange_calc,
+#                    aes(x = treatment,
+#                        y = log2_fc,
+#                        fill = treatment_type)) +
+#   geom_boxplot(outlier.shape = NA, width = 0.6) +
+#   geom_jitter(aes(color = treatment_type),
+#               position = position_jitterdodge(jitter.width = 0.5),
+#               size = 1.5, alpha = 0.7) +
+#   scale_fill_manual(
+#     values = type_colors,
+#     labels = c("L4440" = "L4440 control", "RNAi" = "RNAi treatment")
+#   ) +
+#   scale_color_manual(
+#     values = c("L4440" = "gray30", "RNAi" = "#1a6fa0"),
+#     guide  = "none"
+#   ) +
+#   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+#   scale_y_continuous(limits = c(-0.5, 1.5)) +
+#   facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
+#   labs(
+#     title = "log2 enrichment at position 0 vs ±100",
+#     x     = "Treatment",
+#     y     = "log2 (intensity at 0 / mean intensity at ±100)",
+#     fill  = NULL
+#   ) +
+#   theme_classic(base_size = 12) +
+#   theme(
+#     axis.text.x     = element_text(angle = 35, hjust = 1, face = "italic"),
+#     strip.text      = element_text(face = "bold"),
+#     legend.position = "top"
+#   )
+# 
+# p_merged
 
-p_merged <- ggplot(foldChange_calc,
+```
+
+### 3b. Merged boxplot, x-axis by channel, faceted by treatment
+
+```{r boxplot_by_channel, fig.height = 6, fig.width = 14}
+
+# p_by_channel <- ggplot(foldChange_calc,
+#                        aes(x = channel,
+#                            y = log2_fc,
+#                            fill = treatment_type)) +
+#   geom_boxplot(outlier.shape = NA, width = 0.6) +
+#   geom_jitter(aes(color = treatment_type),
+#               position = position_jitterdodge(jitter.width = 0.2),
+#               size = 1.5, alpha = 0.7) +
+#   scale_fill_manual(
+#     values = type_colors,
+#     labels = c("L4440" = "L4440 control", "RNAi" = "RNAi treatment")
+#   ) +
+#   scale_color_manual(
+#     values = c("L4440" = "gray30", "RNAi" = "#1a6fa0"),
+#     guide  = "none"
+#   ) +
+#   scale_x_discrete(labels = channel_labels) +
+#   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+#   scale_y_continuous(limits = c(-0.5, 1.5)) +
+#   facet_wrap(~ treatment, nrow = 2) +
+#   labs(
+#     title = "log2 enrichment at position 0 vs ±100: split by channel",
+#     x     = "mRNA channel",
+#     y     = "log2 (intensity at 0 / mean intensity at ±100)",
+#     fill  = NULL
+#   ) +
+#   theme_classic(base_size = 12) +
+#   theme(
+#     strip.text      = element_text(face = "bold.italic"),
+#     legend.position = "top"
+#   )
+# 
+# p_by_channel
+
+```
+
+---
+
+## Summary statistics
+
+```{r summary_stats}
+
+# summary_stats_table <- foldChange_calc %>%
+#   group_by(treatment, channel) %>%
+#   summarise(
+#     n          = n(),
+#     min_log2fc = round(min(log2_fc,    na.rm = TRUE), 3),
+#     median_log2fc = round(median(log2_fc, na.rm = TRUE), 3),
+#     mean_log2fc   = round(mean(log2_fc,   na.rm = TRUE), 3),
+#     max_log2fc = round(max(log2_fc,    na.rm = TRUE), 3),
+#     .groups = "drop"
+#   ) %>%
+#   arrange(channel, treatment)
+# 
+# print(summary_stats_table, n = Inf)
+
+```
+
+---
+
+## Statistics
+
+```{r}
+# # Check assumptions
+# 
+# # Normality per group (Shapiro-Wilk), grouped by channel and treatment
+# normality_check <- foldChange_calc %>%
+#   group_by(channel, treatment) %>%
+#   shapiro_test(log2_fc)
+# normality_check
+# 
+# # Homogeneity of variance (Levene's test) 
+# variance_check <- foldChange_calc %>%
+#   group_by(channel) %>%
+#   levene_test(log2_fc ~ treatment)
+# variance_check
+```
+
+
+```{r pairwise_wilcox}
+
+# # Pairwise Wilcoxon vs L4440 reference (per channel)
+# # Use if doesn't pass assumption tests
+# wilcox_pairwise_stats <- foldChange_calc %>%
+#   group_by(channel) %>%
+#   wilcox_test(log2_fc ~ treatment, ref.group = "L4440") %>%
+#   adjust_pvalue(method = "BH") %>%
+#   add_significance()
+# 
+# wilcox_pairwise_stats
+
+```
+
+```{r}
+# # Pairwise Welch's t-test vs L4440 reference (per channel)
+# welch_pairwise_stats_ <- foldChange_calc %>%
+#   group_by(channel) %>%
+#   t_test(log2_fc ~ treatment, ref.group = "L4440") %>%
+#   adjust_pvalue(method = "BH") %>%
+#   add_significance()
+# 
+# welch_pairwise_stats
+```
+
+---
+
+## Section 4: Window-based membrane-y-ness (alternative to single-point fc_enrich)
+
+The metric above (`fc_enrich`) reads a single row for the peak (`aligned_row == 0`)
+and single rows for the flanks (`-100`, `100`), so it's sensitive to noise at exactly
+those three coordinates. This section averages over a small window around each of
+those points instead, which should be less sensitive to single-pixel noise while
+staying directly comparable to `fc_enrich` above. Applied across all treatments
+(not just one), grouped the same way as Section 3.
+
+### 4a. Calculate the window-based ratio, all treatments
+
+```{r window_membraneyness}
+
+window_half_width <- 10  # rows to either side of each point
+
+peak_flank_windows <- norm_total %>%
+  mutate(region = case_when(
+    aligned_row >= 0 - window_half_width & aligned_row <= 0 + window_half_width ~ "peak",
+    aligned_row >= -100 - window_half_width & aligned_row <= -100 + window_half_width ~ "flank_left",
+    aligned_row >=  100 - window_half_width & aligned_row <=  100 + window_half_width ~ "flank_right",
+    TRUE ~ NA_character_
+  )) %>%
+  filter(!is.na(region))
+
+fc_window <- peak_flank_windows %>%
+  group_by(date, treatment, embryoID, channel, region) %>%
+  summarise(mean_intensity = mean(normalized_intensity, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = region, values_from = mean_intensity) %>%
+  mutate(flank = (flank_left + flank_right) / 2,   # average the two flank means
+         fc_enrich_window = peak / flank,
+         log2_fc_window = log2(fc_enrich_window))
+
+# Same factor setup as Section 3, but across all treatments in this merged analysis
+fc_window <- fc_window %>%
+  mutate(
+    treatment      = factor(treatment, levels = treatment_order),
+    channel        = as.factor(channel),
+    treatment_type = ifelse(treatment == "L4440", "L4440", "RNAi")
+  )
+
+print(fc_window, n = Inf)
+
+```
+
+### 4b. Summary statistics, window-based
+
+```{r window_summary_stats}
+
+summary_stats_table_window <- fc_window %>%
+  group_by(treatment, channel) %>%
+  summarise(
+    n             = n(),
+    min_log2fc    = round(min(log2_fc_window,    na.rm = TRUE), 3),
+    median_log2fc = round(median(log2_fc_window, na.rm = TRUE), 3),
+    mean_log2fc   = round(mean(log2_fc_window,   na.rm = TRUE), 3),
+    max_log2fc    = round(max(log2_fc_window,    na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  arrange(channel, treatment)
+
+print(summary_stats_table_window, n = Inf)
+
+```
+
+### 4c. Boxplots, window-based
+
+```{r window_boxplot_merged, fig.height = 6, fig.width = 8}
+
+window_boxplot_merged <- ggplot(fc_window,
                    aes(x = treatment,
-                       y = log2_fc,
+                       y = log2_fc_window,
                        fill = treatment_type)) +
   geom_boxplot(outlier.shape = NA, width = 0.6) +
   geom_jitter(aes(color = treatment_type),
@@ -553,14 +724,12 @@ p_merged <- ggplot(foldChange_calc,
     guide  = "none"
   ) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
-  geom_hline(data = l4440_ch2_ref, aes(yintercept = med),
-             linetype = "dashed", color = "red", linewidth = 0.6) +
   scale_y_continuous(limits = c(-0.5, 1.5)) +
   facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
   labs(
-    title = "log2 enrichment at position 0 vs ±100",
+    title = "Window-based log2 enrichment (peak window vs. flank windows)",
     x     = "Treatment",
-    y     = "log2 (intensity at 0 / mean intensity at ±100)",
+    y     = "log2 (mean intensity in peak window / mean intensity in flank windows)",
     fill  = NULL
   ) +
   theme_classic(base_size = 12) +
@@ -570,86 +739,111 @@ p_merged <- ggplot(foldChange_calc,
     legend.position = "top"
   )
 
-p_merged
+window_boxplot_merged
 
 ```
 
-### 3b. Merged boxplot, x-axis by channel, faceted by treatment
+```{r window_boxplot_by_channel, fig.height = 6, fig.width = 14}
 
-```{r boxplot_by_channel, fig.height = 6, fig.width = 14}
-
-p_by_channel <- ggplot(foldChange_calc,
-                       aes(x = channel,
-                           y = log2_fc,
-                           fill = treatment_type)) +
-  geom_boxplot(outlier.shape = NA, width = 0.6) +
-  geom_jitter(aes(color = treatment_type),
-              position = position_jitterdodge(jitter.width = 0.2),
-              size = 1.5, alpha = 0.7) +
-  scale_fill_manual(
-    values = type_colors,
-    labels = c("L4440" = "L4440 control", "RNAi" = "RNAi treatment")
-  ) +
-  scale_color_manual(
-    values = c("L4440" = "gray30", "RNAi" = "#1a6fa0"),
-    guide  = "none"
-  ) +
-  scale_x_discrete(labels = channel_labels) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
-  scale_y_continuous(limits = c(-0.5, 1.5)) +
-  facet_wrap(~ treatment, nrow = 2) +
-  labs(
-    title = "log2 enrichment at position 0 vs ±100: split by channel",
-    x     = "mRNA channel",
-    y     = "log2 (intensity at 0 / mean intensity at ±100)",
-    fill  = NULL
-  ) +
-  theme_classic(base_size = 12) +
-  theme(
-    strip.text      = element_text(face = "bold.italic"),
-    legend.position = "top"
-  )
-
-p_by_channel
+# p_window_by_channel <- ggplot(fc_window,
+#                        aes(x = channel,
+#                            y = log2_fc_window,
+#                            fill = treatment_type)) +
+#   geom_boxplot(outlier.shape = NA, width = 0.6) +
+#   geom_jitter(aes(color = treatment_type),
+#               position = position_jitterdodge(jitter.width = 0.2),
+#               size = 1.5, alpha = 0.7) +
+#   scale_fill_manual(
+#     values = type_colors,
+#     labels = c("L4440" = "L4440 control", "RNAi" = "RNAi treatment")
+#   ) +
+#   scale_color_manual(
+#     values = c("L4440" = "gray30", "RNAi" = "#1a6fa0"),
+#     guide  = "none"
+#   ) +
+#   scale_x_discrete(labels = channel_labels) +
+#   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+#   scale_y_continuous(limits = c(-0.5, 1.5)) +
+#   facet_wrap(~ treatment, nrow = 2) +
+#   labs(
+#     title = "Window-based log2 enrichment: split by channel",
+#     x     = "mRNA channel",
+#     y     = "log2 (mean intensity in peak window / mean intensity in flank windows)",
+#     fill  = NULL
+#   ) +
+#   theme_classic(base_size = 12) +
+#   theme(
+#     strip.text      = element_text(face = "bold.italic"),
+#     legend.position = "top"
+#   )
+# 
+# p_window_by_channel
 
 ```
 
----
+### 4d. Check assumptions
 
-## Summary statistics
+```{r window_assumptions, echo = TRUE, warning = FALSE, message = FALSE}
 
-```{r summary_stats}
-
-summary_stats_table <- foldChange_calc %>%
+# Normality
+fc_window %>%
   group_by(treatment, channel) %>%
-  summarise(
-    n          = n(),
-    min_log2fc = round(min(log2_fc,    na.rm = TRUE), 3),
-    median_log2fc = round(median(log2_fc, na.rm = TRUE), 3),
-    mean_log2fc   = round(mean(log2_fc,   na.rm = TRUE), 3),
-    max_log2fc = round(max(log2_fc,    na.rm = TRUE), 3),
-    .groups = "drop"
-  ) %>%
-  arrange(channel, treatment)
+  shapiro_test(fc_enrich_window)
 
-print(summary_stats_table, n = Inf)
+ggplot(fc_window, aes(sample = fc_enrich_window)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ treatment + channel) +
+  theme_bw()
+
+# Homogeneity of variance
+fc_window %>%
+  group_by(channel) %>%
+  levene_test(fc_enrich_window ~ treatment)
 
 ```
 
----
+### 4e. Pairwise Wilcoxon vs L4440, window-based
 
-## Statistics - Pairwise Wilcoxon vs L4440
+Did not pass test of normality and Leven's test for equal variance:
 
-```{r pairwise_wilcox}
+Use non-parametric test that does not require homogeneity of variance -> Wilcoxon test 
 
-# Pairwise Wilcoxon vs L4440 reference (per channel)
-pairwise_stats <- foldChange_calc %>%
+```{r window_pairwise_wilcox}
+
+pairwise_stats_window <- fc_window %>%
   group_by(channel) %>%
-  wilcox_test(log2_fc ~ treatment, ref.group = "L4440") %>%
+  wilcox_test(log2_fc_window ~ treatment, ref.group = "L4440") %>%
   adjust_pvalue(method = "BH") %>%
   add_significance()
 
-pairwise_stats
+print(pairwise_stats_window, n = Inf)
+
+```
+
+## Export plots and stats
+
+
+```{r export_outputs}
+
+today      <- format(Sys.Date(), "%y%m%d")
+output_dir <- "../03_output"
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+
+ggsave(file.path(output_dir, paste0(today, "_linescan_individual.svg")), plot = linescan_individual,
+       width = 14, height = 12)
+
+ggsave(file.path(output_dir, paste0(today, "_mean_linescan.svg")), plot = mean_linescan,
+       width = 14, height = 12)
+
+
+ggsave(file.path(output_dir, paste0(today, "_boxplot_window_2-cell_merged.svg")), plot = window_boxplot_merged,
+       width = 12, height = 7)
+
+write_csv(summary_stats_table_window, file.path(output_dir, paste0(today, "_summary_stats_table_window.csv")))
+write_csv(pairwise_stats_window, file.path(output_dir, paste0(today, "_pairwise_stats_window.csv")))
+
+cat("Exported to:", normalizePath(output_dir), "\n")
 
 ```
 
@@ -663,26 +857,3 @@ sessionInfo()
 
 ---
 
-## Export plots and stats
-
-```{r export_outputs}
-
-today      <- format(Sys.Date(), "%y%m%d")
-output_dir <- "../03_output"
-dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
-
-ggsave(file.path(output_dir, paste0(today, "_boxplot_merged.svg")), plot = p_merged,
-       width = 12, height = 7)
-ggsave(file.path(output_dir, paste0(today, "_linescan_individual.svg")), plot = p_linescan_individual,
-       width = 14, height = 12)
-ggsave(file.path(output_dir, paste0(today, "_linescan_mean_merged.svg")), plot = linescans_mean_merged,
-       width = 14, height = 12)
-ggsave(file.path(output_dir, paste0(today, "_linescan_mean_merged_grid.svg")), plot = linescans_mean_merged_grid,
-       width = 14, height = 12)
-
-write_csv(summary_stats_table, file.path(output_dir, paste0(today, "_summary_stats.csv")))
-write_csv(pairwise_stats, file.path(output_dir, paste0(today, "_pairwise_wilcoxon_stats.csv")))
-
-cat("Exported to:", normalizePath(output_dir), "\n")
-
-```
