@@ -1,0 +1,3 @@
+231114_README
+
+No good 2-cell embryos in this collection. Filtering out of downstream analyses

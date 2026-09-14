@@ -33,7 +33,7 @@ library(dunn.test)
 ```{r}
 
 # Parent directory containing CSV files for all conditions
-parent_directory <- "/Users/nalytorres/Library/CloudStorage/OneDrive-Colostate/OnishLab - NalyTorres/00_2026_ERM1_Torres_et_al/01_raw_data_csv/02_RNAi_knockdowns/total_mRNA_RNAi_conditions/dynein"
+parent_directory <- "/Users/nalytorres/Documents/GitHub/ERM1_TorresMangual/02_dynein_KDs/spot_count_analysis/01_input"
 
 
 # Function to read CSV, replace Image ID with CSV name, and modify column names
@@ -115,6 +115,8 @@ combined_data <- bind_rows(all_data)
 combined_data
 str(combined_data)
 
+write_csv(combined_data, file.path(parent_directory, "raw_spot_counts_dynein_KD.csv"))
+
 ```
 
 
@@ -174,7 +176,8 @@ p <- ggplot(df_long, aes(x = subdirectory, y = total_molecules, fill = subdirect
     strip.text = element_text(size = 16, face = "bold"),
     axis.text.x = element_text(size = 14, face = "bold", angle = 15, vjust = 1, hjust = 1),
     axis.text.y = element_text(size = 14, face = "bold")
-  )
+  ) + 
+  coord_cartesian(ylim = c(0, 6000))
 
 
 # Save
@@ -194,7 +197,30 @@ ggsave("/Users/nalytorres/Library/CloudStorage/OneDrive-Colostate/01_EON_Lab/01_
 ```
 
 
+```{r}
+# Mean and SD summary by condition and mRNA target
+mean_sd_summary <- df_long %>%
+  group_by(subdirectory, mRNA) %>%
+  summarise(
+    mean_total_molecules = mean(total_molecules, na.rm = TRUE),
+    sd_total_molecules = sd(total_molecules, na.rm = TRUE),
+    .groups = "drop"
+  )
 
+mean_sd_summary
+```
+
+set3_mRNA:
+
+DHC-1 (KD): median ≈ 497 molecules
+L4440 (control): median ≈ 1067 molecules
+~2.1-fold decrease in set3 mRNA upon dhc-1 knockdown (p = 2.9e-06)
+
+erm1_mRNA:
+
+DHC-1 (KD): median ≈ 1956 molecules
+L4440 (control): median ≈ 3287 molecules
+~1.7-fold decrease in erm1 mRNA upon dhc-1 knockdown (p = 8.4e-08)
 
 
 
