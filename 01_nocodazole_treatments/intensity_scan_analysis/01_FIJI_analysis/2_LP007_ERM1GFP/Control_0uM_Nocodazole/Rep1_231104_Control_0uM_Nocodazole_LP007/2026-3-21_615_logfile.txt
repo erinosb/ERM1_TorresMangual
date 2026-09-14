@@ -1,0 +1,67 @@
+Initiaiting macro: erm1_membrane_quantification_2cell
+
+Date: 2026-3-21
+Time: 615
+
+Input Directory: /Volumes/NESS/260216_Naly_drugTreatments/260311_Nocodazole_drug_treatments_merged/2_LP007_ERM1GFP/Control_0uM_Nocodazole/Rep1_231104_Control_0uM_Nocodazole_LP007
+Output Directory: /Volumes/NESS/260216_Naly_drugTreatments/260311_Nocodazole_drug_treatments_merged/2_LP007_ERM1GFP/Control_0uM_Nocodazole/Rep1_231104_Control_0uM_Nocodazole_LP007/output
+
+Channel 2 will be included in the composite in green
+Channel 4 will be included in the composite in blue
+
+Will process the following DV files:
+	231104_wLP007_0uM_noco_03_R3D_D3D.dv
+	231104_wLP007_0uM_noco_04_R3D_D3D.dv
+	231104_wLP007_0uM_noco_06_R3D_D3D.dv
+
+Now processing file:	231104_wLP007_0uM_noco_03_R3D_D3D.dv
+	--Starting Z-projection
+	--There are 51 slices
+	--Splice Depth is: 7
+	--Z-projection complete from 23 to 29 using Sum Slices method.
+	--Evaluating Min and Max Thresholds
+Note - channel1 settings must match Channel2 settings for max and min brightness
+	--Setting Channel1 min: 2000
+	--Setting Channel1 max: 30000
+	--Setting Channel2 min: 2000
+	--Setting Channe2 max: 30000
+	--Starting Rotation
+	--Rotation complete. Rotated by -200 angle
+	--Get Region of Interest (ROI) Selection
+	--Selection of ROI complete with coordinates: 474, 422, 333, 69
+	--Select Channel 02
+	--Select Channel 01
+
+Now processing file:	231104_wLP007_0uM_noco_04_R3D_D3D.dv
+	--Starting Z-projection
+	--There are 52 slices
+	--Splice Depth is: 7
+	--Z-projection complete from 24 to 30 using Sum Slices method.
+Note - channel1 settings must match Channel2 settings for max and min brightness
+	--Setting Channel1 min: 2000
+	--Setting Channel1 max: 30000
+	--Setting Channel2 min: 2000
+	--Setting Channe2 max: 30000
+	--Starting Rotation
+	--Rotation complete. Rotated by 128 angle
+	--Get Region of Interest (ROI) Selection
+	--Selection of ROI complete with coordinates: 355, 116, 333, 69
+	--Select Channel 02
+	--Select Channel 01
+
+Now processing file:	231104_wLP007_0uM_noco_06_R3D_D3D.dv
+	--Starting Z-projection
+	--There are 51 slices
+	--Splice Depth is: 7
+	--Z-projection complete from 1 to 7 using Sum Slices method.
+Note - channel1 settings must match Channel2 settings for max and min brightness
+	--Setting Channel1 min: 2000
+	--Setting Channel1 max: 30000
+	--Setting Channel2 min: 2000
+	--Setting Channe2 max: 30000
+	--Starting Rotation
+	--Rotation complete. Rotated by 160 angle
+	--Get Region of Interest (ROI) Selection
+	--Selection of ROI complete with coordinates: 544, 483, 333, 69
+	--Select Channel 02
+	--Select Channel 01

@@ -1,0 +1,3 @@
+channel	.y.	group1	group2	n1	n2	statistic	p	p.adj	p.adj.signif
+ch1	fc_enrich	0uM	150uM	10	16	76	0.856355221034182	0.856355221034182	ns
+ch2	fc_enrich	0uM	150uM	10	16	131	0.00605301281031527	0.0121060256206305	*

@@ -39,5 +39,6 @@ This repository accompanies the manuscript "*erm-1* mRNA and ERM-1 protein co-tr
 Click on the links below (or directories above) to navigate to each directory:
 
   * [01_nocodazole](https://github.com/erinosb/ERM1_TorresMangual/tree/main/01_nocodazole_treatments). Accompanies Figure 1
+    * [01A Intensity Scan Analysis](https://github.com/erinosb/ERM1_TorresMangual/tree/ERIN_NOCO1/01_nocodazole_treatments/intensity_scan_analysis)
   * [02_dynein_KDs](https://github.com/erinosb/ERM1_TorresMangual/tree/main/02_dynein_KDs). Accompanies Figure 2
   * [03_kinesins_KDs](https://github.com/TorresNaly/ERM1_TorresMangual/tree/main/03_kinesins_KDs). Accompanies Figure 3
