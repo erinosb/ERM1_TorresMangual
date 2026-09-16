@@ -1,7 +1,7 @@
 ---
 title: "4-cell erm-1 bmk-1 KD analysis"
 author: "Sam Zavislan-Pullaro, Erin Osborne Nishimura"
-date: "2026-08-26"
+date: "2026-09-14"
 output: 
   github_document:
     toc: true
@@ -131,8 +131,8 @@ dim(test_8)
 ```{r annotationcolumns, echo = TRUE, warning = FALSE, message = FALSE}
 
 # Extract out the salient information from the filename and pivot the data longer
-# Had to manually change image names to follow convention/consistency
-# Imaging date in the first field and embryo ID # remained unchanged
+# Had to manually change image names to follow convention/consistency (date_strain_treatment_ID_R3D.dv)
+# Imaging date in the first field and embryo ID remained unchanged
 
 # ABa - ABp
 control_1_exp <- control_1[2:dim(control_1)[1],1:335] %>%
@@ -294,12 +294,11 @@ ggplot(data = bmk1_RNAi_data_total, aes(x = timepoints, y = intensity, group = c
 
 ## Use fixed coordinate system 
 
-Peak alignment not used in this analysis because. Aligning each embryo to its own
+Peak intensity alignment is not used in this analysis. Aligning each embryo to its own
 observed channel-2 peak risks manufacturing apparent enrichment at the
-alignment point, since by construction that point is the brightest value in
-every embryo. Instead, every embryo uses the same fixed coordinate system
+alignment point. Instead, every embryo uses the same fixed coordinate system
 based on its row position (`xpoint`), recentered so it spans the same
-`-166:166` range.
+`-166:166` range. Position 0 is the center of the ROI box from the FIJI macro quantification script. The center of the ROI box was manually aligned to the membrane, using a PH::GFP membrane marker strain to visualize the membrane. 
 
 ```{r splitmerge, echo = TRUE, warning = TRUE, message = TRUE}
 
@@ -336,8 +335,7 @@ total_align_long %>%
     pct_na = mean(is.na(intensity)) * 100
   ) %>%
   arrange(aligned_row) %>%
-  print(n = Inf)
-
+  head()
 ```
 
 ## re-arrange the dataset and calculate the means 
