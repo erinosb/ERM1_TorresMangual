@@ -1,0 +1,3 @@
+channel,.y.,group1,group2,n1,n2,statistic,p,p.adj,p.adj.signif
+ch1,fc_enrich_window,L4440,bmk-1,11,9,44,0.71,0.71,ns
+ch2,fc_enrich_window,L4440,bmk-1,11,9,71,0.112,0.224,ns

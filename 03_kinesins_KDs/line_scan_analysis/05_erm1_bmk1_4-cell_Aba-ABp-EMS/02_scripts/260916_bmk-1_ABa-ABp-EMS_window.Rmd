@@ -1,0 +1,771 @@
+---
+title: "4-cell erm-1 bmk-1 KD analysis"
+author: "Sam Zavislan-Pullaro, Erin Osborne Nishimura"
+date: "2026-09-14"
+output: 
+  github_document:
+    toc: true
+    toc_depth: 4
+---
+
+## Overview
+
+This analysis compares the log2 fold enrichment of erm-1 at the ABa - ABp membrane and ABa - EMS membrane during the 4-cell stage of embryonic development in C. elegans. 
+
+Empty vector RNAi control = L4440 
+
+RNAi knockdown condition = bmk-1 
+
+## Load libraries
+
+```{r setup, echo = TRUE, warning = FALSE, message=FALSE}
+library(tidyverse)
+library(gridExtra)
+library(data.table)
+library(rstatix)
+library(dplyr)
+
+```
+
+
+## Import the data
+
+Note: 
+
+channel 1 = set-3
+
+channel 2 = erm-1
+
+```{r macroimport, echo = TRUE, warning = FALSE, message = FALSE}
+
+# import the control data
+# control data comes from L4440 empty vector RNAi controls 
+
+# ABa - ABp 
+control_1 <- read.table(file = "../01_input/2026-7-11_1324_datafile_for_231107_LP306_L4440.txt", header = FALSE, sep = "\t")
+control_2 <- read.table(file = "../01_input/2026-7-11_1252_datafile_for_230713_L4440_RNAi_rep1.txt", header = FALSE, sep = "\t")
+control_3 <- read.table(file = "../01_input/2026-7-11_133_datafile_for_230828_L4440_RNAi_rep2.txt", header = FALSE, sep = "\t")
+control_4 <- read.table(file = "../01_input/2026-7-11_1337_datafile_for_240122_LP306_L4440-rep3.txt", header = FALSE, sep = "\t")
+
+
+# import RNAi treatment data 
+test_1 <- read.table(file = "../01_input/2026-7-14_126_datafile_for_220719_LP306_bmk-1_RNAi.txt", header = FALSE, sep = "\t")
+test_2 <- read.table(file = "../01_input/2026-7-14_1216_datafile_for_230408_LP306_BMK-1_rep1.txt", header = FALSE, sep = "\t")
+test_3 <- read.table(file = "../01_input/2026-7-14_1222_datafile_for_231107_LP306_BMK-1_rep2.txt", header = FALSE, sep = "\t")
+test_4 <- read.table(file = "../01_input/2026-7-14_1225_datafile_for_231113_LP306_BMK-1_rep3.txt", header = FALSE, sep = "\t")
+
+# ABa - EMS
+control_5 <- read.table(file = "../01_input/2026-7-11_1329_datafile_for_231107_LP306_L4440.txt", header = FALSE, sep = "\t")
+control_6 <- read.table(file = "../01_input/2026-7-11_1257_datafile_for_230713_L4440_RNAi_rep1.txt", header = FALSE, sep = "\t")
+control_7 <- read.table(file = "../01_input/2026-7-11_1311_datafile_for_230828_L4440_RNAi_rep2.txt", header = FALSE, sep = "\t")
+control_8 <- read.table(file = "../01_input/2026-7-11_1346_datafile_for_240122_LP306_L4440-rep3.txt", header = FALSE, sep = "\t")
+
+
+# import RNAi treatment data 
+test_5 <- read.table(file = "../01_input/2026-7-14_1233_datafile_for_220719_LP306_bmk-1_RNAi.txt", header = FALSE, sep = "\t")
+test_6 <- read.table(file = "../01_input/2026-7-14_1238_datafile_for_230408_LP306_BMK-1_rep1.txt", header = FALSE, sep = "\t")
+test_7 <- read.table(file = "../01_input/2026-7-14_1241_datafile_for_231107_LP306_BMK-1_rep2.txt", header = FALSE, sep = "\t")
+test_8 <- read.table(file = "../01_input/2026-7-14_1244_datafile_for_231113_LP306_BMK-1_rep3.txt", header = FALSE, sep = "\t")
+
+# Rename the column names
+col_times <- paste(rep(1:333), sep = "")
+
+# ABa - ABp
+colnames(control_1) <- c("file", "channel", col_times)
+colnames(control_2) <- c("file", "channel", col_times)
+colnames(control_3) <- c("file", "channel", col_times)
+colnames(control_4) <- c("file", "channel", col_times)
+
+colnames(test_1) <- c("file", "channel", col_times)
+colnames(test_2) <- c("file", "channel", col_times)
+colnames(test_3) <- c("file", "channel", col_times)
+colnames(test_4) <- c("file", "channel", col_times)
+
+# ABa - EMS
+colnames(control_5) <- c("file", "channel", col_times)
+colnames(control_6) <- c("file", "channel", col_times)
+colnames(control_7) <- c("file", "channel", col_times)
+colnames(control_8) <- c("file", "channel", col_times)
+
+colnames(test_5) <- c("file", "channel", col_times)
+colnames(test_6) <- c("file", "channel", col_times)
+colnames(test_7) <- c("file", "channel", col_times)
+colnames(test_8) <- c("file", "channel", col_times)
+
+# Check that the dimensions remain unchanged
+dim(control_1)
+dim(control_2)
+dim(control_3)
+dim(control_4)
+
+dim(test_1)
+dim(test_2)
+dim(test_3)
+dim(test_4)
+
+dim(control_5)
+dim(control_6)
+dim(control_7)
+dim(control_8)
+
+dim(test_5)
+dim(test_6)
+dim(test_7)
+dim(test_8)
+
+
+# control_1[1:9,1:8]
+# control_2[1:9,1:8]
+# control_3[1:9,1:8]
+
+# test_1[1:9,1:8]
+# test_2[1:9,1:8]
+# test_3[1:9,1:8]
+# test_4[1:9,1:8]
+
+```
+
+
+## Create annotation columns
+
+```{r annotationcolumns, echo = TRUE, warning = FALSE, message = FALSE}
+
+# Extract out the salient information from the filename and pivot the data longer
+# Had to manually change image names to follow convention/consistency (date_strain_treatment_ID_R3D.dv)
+# Imaging date in the first field and embryo ID remained unchanged
+
+# ABa - ABp
+control_1_exp <- control_1[2:dim(control_1)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+ 
+control_2_exp <- control_2[2:dim(control_2)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+ 
+control_3_exp <- control_3[2:dim(control_3)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_")) 
+
+control_4_exp <- control_4[2:dim(control_4)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_")) 
+
+ 
+test_1_exp <- test_1[2:dim(test_1)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+
+test_2_exp <- test_2[2:dim(test_2)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+
+test_3_exp <- test_3[2:dim(test_3)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+
+test_4_exp <- test_4[2:dim(test_4)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+
+# ABa - EMS
+control_5_exp <- control_5[2:dim(control_5)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+ 
+control_6_exp <- control_6[2:dim(control_6)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+ 
+control_7_exp <- control_7[2:dim(control_7)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_")) 
+
+control_8_exp <- control_8[2:dim(control_8)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_")) 
+
+ 
+test_5_exp <- test_5[2:dim(test_5)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+
+test_6_exp <- test_6[2:dim(test_6)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+
+test_7_exp <- test_7[2:dim(test_7)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+
+test_8_exp <- test_8[2:dim(test_8)[1],1:335] %>%
+  separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
+  pivot_longer(cols = `1`:`333`, names_to = "xpoint", values_to = "intensity") %>%
+  mutate(unique_id = paste(date, strain, treatment, embryoID, channel, sep = "_"))
+
+```
+
+## Add timepoints as proxy for position along anterior to posterior axis 
+
+```{r}
+# Add in the timepoints
+
+addInTimepoints <- function(tibble) {
+  timepoints <- as.vector(unlist(control_1[1,3:335]))
+  repnumb = dim(tibble)[1]/333
+  tibble::add_column(tibble, timepoints = rep(timepoints,repnumb), .after = "xpoint")
+}
+
+# ABa - ABp
+control_1_plustime <- addInTimepoints(control_1_exp)
+control_2_plustime <- addInTimepoints(control_2_exp)
+control_3_plustime <- addInTimepoints(control_3_exp)
+control_4_plustime <- addInTimepoints(control_4_exp)
+
+test_1_plustime <- addInTimepoints(test_1_exp)
+test_2_plustime <- addInTimepoints(test_2_exp)
+test_3_plustime <- addInTimepoints(test_3_exp)
+test_4_plustime <- addInTimepoints(test_4_exp)
+
+# ABa - EMS
+control_5_plustime <- addInTimepoints(control_5_exp)
+control_6_plustime <- addInTimepoints(control_6_exp)
+control_7_plustime <- addInTimepoints(control_7_exp)
+control_8_plustime <- addInTimepoints(control_8_exp)
+
+test_5_plustime <- addInTimepoints(test_5_exp)
+test_6_plustime <- addInTimepoints(test_6_exp)
+test_7_plustime <- addInTimepoints(test_7_exp)
+test_8_plustime <- addInTimepoints(test_8_exp)
+
+#check it
+
+# ABa - ABp 
+control_1_plustime[330:340,]
+control_2_plustime[330:340,]
+control_3_plustime[330:340,]
+control_4_plustime[330:340,]
+test_1_plustime[330:340,]
+test_2_plustime[330:340,]
+test_3_plustime[330:340,]
+test_4_plustime[330:340,]
+
+# ABa - EMS
+control_5_plustime[330:340,]
+control_6_plustime[330:340,]
+control_7_plustime[330:340,]
+control_8_plustime[330:340,]
+test_5_plustime[330:340,]
+test_6_plustime[330:340,]
+test_7_plustime[330:340,]
+test_8_plustime[330:340,]
+```
+
+```{r}
+# Merge the datasets together 
+bmk1_RNAi_data_total <- rbind(control_1_plustime, control_2_plustime, control_3_plustime, control_4_plustime, test_1_plustime, test_2_plustime, test_3_plustime, test_4_plustime, control_5_plustime, control_6_plustime, control_7_plustime, control_8_plustime, test_5_plustime, test_6_plustime, test_7_plustime, test_8_plustime)
+
+head(bmk1_RNAi_data_total)
+
+# Plot all samples
+ggplot(data = bmk1_RNAi_data_total, aes(x = timepoints, y = intensity, group = c(unique_id))) +
+  geom_line(aes(colour = unique_id))+
+  facet_wrap(~ channel + treatment)+
+  guides(color = "none")+
+  theme_bw()
+
+```
+
+
+## Use fixed coordinate system 
+
+Peak intensity alignment is not used in this analysis. Aligning each embryo to its own
+observed channel-2 peak risks manufacturing apparent enrichment at the
+alignment point. Instead, every embryo uses the same fixed coordinate system
+based on its row position (`xpoint`), recentered so it spans the same
+`-166:166` range. Position 0 is the center of the ROI box from the FIJI macro quantification script. The center of the ROI box was manually aligned to the membrane, using a PH::GFP membrane marker strain to visualize the membrane. 
+
+```{r splitmerge, echo = TRUE, warning = TRUE, message = TRUE}
+
+bmk1_dt <- as.data.table(bmk1_RNAi_data_total)
+bmk1_dt$xpoint <- as.integer(bmk1_dt$xpoint)
+
+# Fixed coordinate: recenter xpoint (1:333) to run -166:166, identical for
+# every embryo and every channel - no peak-finding, no per-embryo offset.
+bmk1_dt[, aligned_row := xpoint - 167]
+
+# Check that everything worked
+dim(bmk1_RNAi_data_total)
+dim(bmk1_dt)
+range(bmk1_dt$aligned_row)
+
+# Rename to match the variable name the rest of the script expects
+total_align_long <- bmk1_dt %>%
+  select(strain, aligned_row, unique_id, intensity)
+
+```
+
+```{r}
+# Data-completeness check: for each position in the fixed coordinate
+# (aligned_row, -166:166), count total observations and how many are NA.
+# Every embryo covers the full -166:166 range with real values, so
+# pct_na should be 0 throughout. Non-zero values would flag missing
+# data in the raw macro output.
+
+total_align_long %>%
+  group_by(aligned_row) %>%
+  summarize(
+    n_total = n(),
+    n_na = sum(is.na(intensity)),
+    pct_na = mean(is.na(intensity)) * 100
+  ) %>%
+  arrange(aligned_row) %>%
+  head()
+```
+
+## re-arrange the dataset and calculate the means 
+
+```{r meanplot, echo = TRUE, warning = FALSE, message = FALSE}
+# Normalize the data by dividing by the embryo-specific mean
+bmk1_norm_total <- total_align_long %>%
+  separate_wider_delim(unique_id, delim = "_", names = c("date", NA, "treatment", "embryoID", "channel")) %>%
+  group_by(date, embryoID, channel, treatment) %>%
+  mutate(normalized_intensity = intensity / mean(intensity, na.rm = TRUE))
+table(bmk1_norm_total$channel, bmk1_norm_total$treatment)
+
+head(bmk1_norm_total)
+
+```
+
+```{r}
+# Exclude 220719_12 (ch2) for now - identified as having an atypical
+# secondary shoulder before the main peak (color-matched from the
+# line-scan plot). Pending review of the raw image; remove this filter
+# once resolved, or add more rows to excluded_embryos to drop others.
+
+excluded_embryos <- tibble::tribble(
+  ~date,    ~embryoID, ~channel,
+  "231107", "13",      "ch2"
+)
+
+bmk1_norm_total <- bmk1_norm_total %>%
+  anti_join(excluded_embryos, by = c("date", "embryoID", "channel"))
+
+# Confirm removal - counts should drop by one embryo in ch2/bmk-1
+table(bmk1_norm_total$channel, bmk1_norm_total$treatment)
+```
+
+## Visualize normalized linescans
+
+```{r}
+normalized_linescan <- ggplot(data = bmk1_norm_total, aes(x = aligned_row, y = normalized_intensity, 
+                                     group = interaction(date, embryoID, channel))) +
+  geom_line(aes(color = treatment), alpha = 0.5) +
+  scale_color_manual(values = c("#2189ce", "#000000")) +
+  facet_wrap(~ channel + treatment) +
+  guides(color = "none") +
+  theme_bw()
+normalized_linescan
+```
+
+```{r kinesins_mean_overlaid, fig.height = 3, fig.width = 7}
+
+# treatment_colors <- c(
+#   "L4440"   = "darkgray",
+#   "bmk-1"   = "lightblue"
+# )
+# 
+# mean_signal <- bmk1_norm_total %>%
+#   group_by(aligned_row, treatment, channel) %>%
+#   summarize(
+#     mean_signal = mean(normalized_intensity, na.rm = TRUE),
+#     sd_signal   = sd(normalized_intensity,   na.rm = TRUE),
+#     .groups     = "drop"
+#   ) %>%
+#   mutate(
+#     ymeanmax = mean_signal + sd_signal,
+#     ymeanmin = mean_signal - sd_signal
+#   )
+# 
+# kinesin_treatments <- c("L4440", "bmk-1")
+# 
+# channel_labels <- c("ch1" = "set-3 mRNA", "ch2" = "erm-1 mRNA")
+# 
+# mean_signal_kinesins <- mean_signal %>%
+#   filter(treatment %in% kinesin_treatments)
+# 
+# ggplot(mean_signal_kinesins,
+#        aes(x = aligned_row, y = mean_signal,
+#            color = treatment, fill = treatment,
+#            group = treatment)) +
+#   geom_line(linewidth = 0.8) +
+#   scale_color_manual(values = treatment_colors) +
+#   scale_fill_manual(values  = treatment_colors) +
+#   facet_wrap(~ channel, labeller = labeller(channel = channel_labels)) +
+#   labs(
+#     title  = "Mean normalized 4 -cell line scans - L4440 vs bmk-1 KD",
+#     x      = "Position",
+#     y      = "Mean normalized intensity",
+#     color  = "Treatment",
+#     fill   = "Treatment"
+#   ) +
+#   theme_bw(base_size = 12) +
+#   theme(strip.text = element_text(face = "bold"),
+#         legend.position = "right")
+
+```
+
+```{r, fig.width=8, fig.height=3}
+# Separate out the unique identifier info, then pivot sider
+bmk1_wide_by_sample <- bmk1_norm_total %>%
+  pivot_wider(names_from = c(date, embryoID, channel, treatment), 
+            values_from = normalized_intensity,
+            id_cols = c(strain, aligned_row))
+
+
+# Second Try - Separate out the unique identifier info, then pivot sider
+bmk1_wide_by_sample <- bmk1_norm_total %>%
+  pivot_wider(names_from = c(date, embryoID), 
+            values_from = normalized_intensity,
+            id_cols = c(strain, aligned_row, treatment, channel))
+
+colnames(bmk1_wide_by_sample)
+
+# Play around with mean, medium, and sum:
+bmk1_wide_with_stats <- bmk1_wide_by_sample %>%
+  rowwise() %>%
+  mutate(
+    sum_signal    = sum(c_across(`231107a_02`:`231113_02`), na.rm = TRUE),
+    mean_signal   = mean(c_across(`231107a_02`:`231113_02`), na.rm = TRUE),
+    median_signal = median(c_across(`231107a_02`:`231113_02`), na.rm = TRUE),
+    sd_signal     = sd(c_across(`231107a_02`:`231113_02`), na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+# colnames(bmk1_wide_with_stats)
+
+bmk1_wide_with_range <- bmk1_wide_with_stats %>%
+  rowwise() %>%
+  mutate(ymeanmax = sum(mean_signal, sd_signal) ) %>%
+  mutate(ymeanmin = sum(mean_signal, -sd_signal)) %>%
+  ungroup() %>%
+  mutate(treatment = factor(treatment, levels = c("L4440", "bmk-1")))
+
+colorselection = c("#000000", "#2189ce")
+
+# Plot split by RNAi treatment and L4440 empty vector control 
+a <- ggplot(data = bmk1_wide_with_range, aes(x = aligned_row, y = mean_signal, group = interaction(channel, treatment))) +
+  geom_line(aes(color = channel)) +
+  scale_color_manual(values = colorselection, aesthetics = c("colour", "fill"), labels = c("set-1 mRNA", "erm-1 mRNA")) +
+  geom_ribbon(aes(ymin = ymeanmin, ymax = ymeanmax, fill = channel), alpha = 0.2) +
+  facet_wrap(~ treatment) +
+  scale_y_continuous(breaks = seq(0, 3, by = 0.5)) +
+  theme_bw()
+a
+
+# Plot in a different way - set-3 and erm-1 mRNA split into facets
+colorselection = c("#000000", "#2189ce")
+channel.labs <- c("set-3 mRNA", "erm-1 mRNA")
+names(channel.labs) <- c("ch1", "ch2")
+
+# Plot split by transcript
+b <- ggplot(data = bmk1_wide_with_range, aes(x = aligned_row, y = mean_signal, group = interaction(channel, treatment)))+
+  geom_line(aes(color=treatment))+
+  scale_color_manual(values = colorselection, aesthetics = c("colour", "fill"), labels = c("control", "bmk-1 RNAi"))+
+  facet_wrap(~ channel, labeller = labeller(channel = channel.labs))+
+  theme_bw()
+
+b
+
+```
+
+## Create a metric of "membrane-y-ness" for each condition
+
+We are comparing the log2 fold change intensity at the membrane to the flanking regions along the anterior to posterior axis
+
+For 2-cell stage, we used the range: -100,0,100
+
+For 4-cell stage, use -50,0,50 range because the cells are smaller, and the orientation of the membrane can push the ROI quantification box outside of the embryo. 
+
+```{r membraneyness, echo = TRUE, warning = FALSE, message = FALSE, fig.height = 7, fig.width = 6}
+
+# extract the peak intensity versus the -50 and +50 values
+# peaks_and_valleys <- bmk1_norm_total %>%
+#   filter(aligned_row %in% c(-50,0,50))
+# 
+# # Nest the -50, 1, and +50 values
+# nest_pandv <- peaks_and_valleys %>%
+#   group_by(date, treatment, embryoID, channel) %>%
+#   nest()
+# 
+# # A function to calculate the ratio of the value at 1 compared to the mean of positions, -50 and +50
+# my_calc2 <- function(df) {
+#   df$normalized_intensity[2] / mean(c(df$normalized_intensity[1], df$normalized_intensity[3]))
+# }
+# 
+# # Calculate the ratio for each datapoint
+# foldChange_calc <- nest_pandv %>%
+#   mutate(fc_enrich = map_dbl(data, my_calc2))
+# 
+# # Change some columns to factors
+# foldChange_calc$treatment <- factor(foldChange_calc$treatment, levels = c("L4440", "bmk-1")) 
+# foldChange_calc$channel <- as.factor(foldChange_calc$channel)
+
+
+# plot the data:
+# d <- ggplot(data = foldChange_calc, aes(x = as.factor(channel), y = log(fc_enrich, base = 2), fill = treatment))+
+#   geom_boxplot(outlier.shape = NA)+
+#   geom_jitter(position=position_jitterdodge())+
+#   scale_y_continuous(limits = c(-0.5, 1.0)) +
+#   geom_hline(yintercept = 0, linetype = "dashed") +
+#   scale_fill_manual(values = c("L4440" = "darkgray", "bmk-1" = "lightblue"),
+#                    labels = c("L4440" = "L4440 control", "bmk-1" = "bmk-1 RNAi"))+labs(y = "log2 FoldChange Enrichment of mRNA \n(mRNA intensity at 0 / mean mRNA intensity at -50 and 50)", x = "mRNA") +
+#   scale_x_discrete(labels = c("ch1" = "set-3", "ch2" = "erm-1"))+
+#   theme_classic(base_size = 12)
+# 
+# d
+# 
+# e <- ggplot(data = foldChange_calc, aes(x = as.factor(treatment), y = log(fc_enrich, base = 2), fill = channel))+
+#   geom_boxplot(outlier.shape = NA)+
+#   geom_jitter(position=position_jitterdodge())+
+#   scale_y_continuous(limits = c(-0.5, 1.0)) +
+#   geom_hline(yintercept = 0, linetype = "dashed") +
+#   labs(y = "log2 FoldChange Enrichment of mRNA \n(mRNA intensity at 0 / mean mRNA intensity at -50 and 50)", x = "mRNA") +
+#   theme_classic(base_size = 12)
+# 
+# #e
+
+
+```
+## Get summary stats for log2 fold change enrichment at membrane vs flanking regions 
+
+```{r}
+
+# foldChange_calc %>%
+#   group_by(treatment, channel) %>%
+#   summarise(
+#     min_log2fc    = min(log(fc_enrich, base = 2), na.rm = TRUE),
+#     median_log2fc = median(log(fc_enrich, base = 2), na.rm = TRUE),
+#     mean_log2fc   = mean(log(fc_enrich, base = 2), na.rm = TRUE),
+#     max_log2fc    = max(log(fc_enrich, base = 2), na.rm = TRUE)
+#   )
+
+```
+
+## Calculate the statistics
+
+```{r}
+# # Check normality 
+# 
+# foldChange_calc %>%
+#   group_by(treatment, channel) %>%
+#   shapiro_test(fc_enrich)
+# 
+# # QQ plots to visualize normality
+# ggplot(foldChange_calc, aes(sample = fc_enrich)) +
+#   stat_qq() +
+#   stat_qq_line() +
+#   facet_wrap(~ treatment + channel) +
+#   theme_bw()
+# # Homogeneity of variance across treatment groups, within each channel
+# 
+# foldChange_calc %>%
+#   group_by(channel) %>%
+#   levene_test(fc_enrich ~ treatment)
+```
+
+
+```{r wilcox, echo = TRUE, warning = FALSE, message = FALSE}
+
+# foldChange_calc
+# 
+# stats_wilcox <- foldChange_calc %>%
+#   group_by(channel) %>%
+#   wilcox_test(fc_enrich ~ treatment) %>%
+#   adjust_pvalue(method = "BH") %>%
+#   add_significance()
+# 
+# stats_wilcox
+
+
+```
+```{r}
+### Passes normality and equal variance tests 
+### Standard t test with var.equal = TRUE is appropriate 
+
+# stats_ttest <- foldChange_calc %>%
+#   group_by(channel) %>%
+#   t_test(fc_enrich ~ treatment, var.equal = TRUE) %>%
+#   group_by(channel) %>%
+#   adjust_pvalue(method = "BH") %>%
+#   add_significance()
+# stats_ttest
+
+```
+
+---
+
+## Window-based "membrane-y-ness" (alternative to single-point fc_enrich)
+
+The metric above (`fc_enrich`) reads a single row for the peak (`aligned_row == 0`)
+and single rows for the flanks (`-50`, `50`), so it's sensitive to noise at exactly
+those three coordinates. This section averages over a small window around each of
+those points instead, which should be less sensitive to single-pixel noise while
+staying directly comparable to `fc_enrich` above.
+
+### Calculate the window-based ratio
+
+```{r window_membraneyness, echo = TRUE, warning = FALSE, message = FALSE}
+
+window_half_width <- 5  # rows to either side of each point
+
+peak_flank_windows <- bmk1_norm_total %>%
+  mutate(region = case_when(
+    aligned_row >= -window_half_width & aligned_row <= window_half_width ~ "peak",
+    aligned_row >= -50 - window_half_width & aligned_row <= -50 + window_half_width ~ "flank_left",
+    aligned_row >=  50 - window_half_width & aligned_row <=  50 + window_half_width ~ "flank_right",
+    TRUE ~ NA_character_
+  )) %>%
+  filter(!is.na(region))
+
+fc_window <- peak_flank_windows %>%
+  group_by(date, treatment, embryoID, channel, region) %>%
+  summarise(mean_intensity = mean(normalized_intensity, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = region, values_from = mean_intensity) %>%
+  mutate(flank = (flank_left + flank_right) / 2,   # average the two flank means, not pooled rows
+         fc_enrich_window = peak / flank,
+         log2_fc_window = log2(fc_enrich_window))
+
+# Same factor setup as the point-based version
+fc_window$treatment <- factor(fc_window$treatment, levels = c("L4440", "bmk-1"))
+fc_window$channel   <- as.factor(fc_window$channel)
+
+fc_window
+
+```
+
+### Plot the window-based enrichment
+
+```{r window_plot, echo = TRUE, warning = FALSE, message = FALSE, fig.height = 7, fig.width = 6}
+
+d_window <- ggplot(data = fc_window, aes(x = as.factor(channel), y = log2_fc_window, fill = treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(position=position_jitterdodge())+
+  scale_y_continuous(limits = c(-0.5, 1.0)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  scale_fill_manual(values = c("L4440" = "darkgray", "bmk-1" = "lightblue"),
+                   labels = c("L4440" = "L4440 control", "bmk-1" = "bmk-1 RNAi"))+
+  labs(y = "log2 FoldChange Enrichment of mRNA \n(window-averaged mRNA intensity at 0 / window-averaged mRNA intensity at -50 and 50)", x = "mRNA") +
+  scale_x_discrete(labels = c("ch1" = "set-3", "ch2" = "erm-1"))+
+  theme_classic(base_size = 12)
+
+d_window
+
+```
+
+### Summary stats
+
+```{r window_summary, echo = TRUE, warning = FALSE, message = FALSE}
+
+fc_window %>%
+  group_by(treatment, channel) %>%
+  summarise(
+    min_log2fc    = min(log2_fc_window, na.rm = TRUE),
+    median_log2fc = median(log2_fc_window, na.rm = TRUE),
+    mean_log2fc   = mean(log2_fc_window, na.rm = TRUE),
+    max_log2fc    = max(log2_fc_window, na.rm = TRUE)
+  )
+
+```
+
+### Check assumptions
+
+```{r window_assumptions, echo = TRUE, warning = FALSE, message = FALSE}
+
+# Normality
+fc_window %>%
+  group_by(treatment, channel) %>%
+  shapiro_test(fc_enrich_window)
+
+ggplot(fc_window, aes(sample = fc_enrich_window)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ treatment + channel) +
+  theme_bw()
+
+# Homogeneity of variance
+fc_window %>%
+  group_by(channel) %>%
+  levene_test(fc_enrich_window ~ treatment)
+
+```
+
+### Statistics
+
+```{r window_stats, echo = TRUE, warning = FALSE, message = FALSE}
+
+stats_wilcox_window <- fc_window %>%
+  group_by(channel) %>%
+  wilcox_test(fc_enrich_window ~ treatment) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stats_wilcox_window
+
+stats_ttest_window <- fc_window %>%
+  group_by(channel) %>%
+  t_test(fc_enrich_window ~ treatment) %>%
+  group_by(channel) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stats_ttest_window
+
+```
+
+---
+
+## Export plots and stats
+
+```{r export_outputs}
+
+today      <- format(Sys.Date(), "%y%m%d")
+output_dir <- "../03_output"
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+
+ggsave(file.path(output_dir, paste0(today, "_boxplot_window.svg")), plot = d_window,
+       width = 12, height = 7)
+ggsave(file.path(output_dir, paste0(today, "_linescan_individual.svg")), plot = normalized_linescan,
+       width = 14, height = 12)
+ggsave(file.path(output_dir, paste0(today, "_mean_signal_linescan.svg")), plot = a,
+       width = 14, height = 12)
+
+write_csv(stats_wilcox_window, file.path(output_dir, paste0(today, "_wilcoxon_stats_window.csv")))
+write_csv(stats_ttest_window, file.path(output_dir, paste0(today, "_ttest_stats_window.csv")))
+
+cat("Exported to:", normalizePath(output_dir), "\n")
+
+```
+
+## Session info
+
+```{r sessionInfo, echo = TRUE, warning = FALSE, message = FALSE}
+
+sessionInfo()
+
+```

@@ -1,12 +1,20 @@
 ---
-title: "260722_bmk1_ABa-ABp_4-cell"
-author: "Sam Zavislan-Pullaro"
-date: "2026-07-14"
+title: "4-cell bmk1 KD ABa-ABp membrane erm-1"
+author: "Sam Zavislan-Pullaro, Erin Osborn-Nishimura"
+date: "2026-09-16"
 output: 
-  html_document:
+  github_document:
     toc: true
     toc_depth: 4
 ---
+
+## Overview
+
+This analysis compares the log2 fold enrichment of erm-1 at the ABa - ABp during the 4-cell stage of embryonic development in C. elegans. 
+
+Empty vector RNAi control = L4440 
+
+RNAi knockdown condition = bmk-1 
 
 ## load libraries
 
@@ -15,7 +23,7 @@ library(tidyverse)
 library(gridExtra)
 library(data.table)
 library(rstatix)
-
+library(dplyr)
 ```
 
 
@@ -31,6 +39,8 @@ channel 2 = erm-1
 
 # import the control data
 # control data comes from L4440 empty vector RNAi controls 
+
+# ABa - ABp 
 control_1 <- read.table(file = "../01_input/2026-7-11_1324_datafile_for_231107_LP306_L4440.txt", header = FALSE, sep = "\t")
 control_2 <- read.table(file = "../01_input/2026-7-11_1252_datafile_for_230713_L4440_RNAi_rep1.txt", header = FALSE, sep = "\t")
 control_3 <- read.table(file = "../01_input/2026-7-11_133_datafile_for_230828_L4440_RNAi_rep2.txt", header = FALSE, sep = "\t")
@@ -91,8 +101,8 @@ dim(test_4)
 
 ```{r annotationcolumns, echo = TRUE, warning = FALSE, message = FALSE}
 
-# Extract out the salient information from the filename and pivot the data longer - "permed" version
-# Had to manually change image names to follow convention/consistency
+# Extract out the salient information from the filename and pivot the data longer
+# Had to manually change image names to follow convention/consistency (date_strain_treatment_ID_R3D.dv)
 
 control_1_exp <- control_1[2:dim(control_1)[1],1:335] %>%
   separate_wider_delim(file, delim = "_", names = c("date", "strain", "treatment", "embryoID", NA)) %>%
@@ -168,11 +178,12 @@ test_4_plustime[330:340,]
 ```
 
 ```{r}
-
 # Merge the datasets together 
 bmk1_RNAi_data_total <- rbind(control_1_plustime, control_2_plustime, control_3_plustime, control_4_plustime, test_1_plustime, test_2_plustime, test_3_plustime, test_4_plustime)
 
-# Plot it - all samples
+head(bmk1_RNAi_data_total)
+
+# Plot all samples
 ggplot(data = bmk1_RNAi_data_total, aes(x = timepoints, y = intensity, group = c(unique_id))) +
   geom_line(aes(colour = unique_id))+
   facet_wrap(~ channel + treatment)+
@@ -182,22 +193,15 @@ ggplot(data = bmk1_RNAi_data_total, aes(x = timepoints, y = intensity, group = c
 ```
 
 
-## Skip peak alignment - use fixed coordinate instead
+## Fixed coordinate method
 
-Alignment step removed (prior discussion: aligning each embryo to its own
+Peak intensity alignment is not used in this analysis. Aligning each embryo to its own
 observed channel-2 peak risks manufacturing apparent enrichment at the
-alignment point, since by construction that point is the brightest value in
-every embryo). Instead, every embryo uses the same fixed coordinate system
+alignment point. Instead, every embryo uses the same fixed coordinate system
 based on its row position (`xpoint`), recentered so it spans the same
-`-166:166` range the old aligned coordinate used. This keeps every downstream
-chunk (normalization, wide pivot, stats, plots, membraneyness calc) working
-on a column still called `aligned_row`, with no other code changes required.
+`-166:166` range. Position 0 is the center of the ROI box from the FIJI macro quantification script. The center of the ROI box was manually aligned to the membrane, using a PH::GFP membrane marker strain to visualize the membrane. 
 
 ```{r splitmerge, echo = TRUE, warning = TRUE, message = TRUE}
-
-# No channel split needed here anymore - alignment was the only reason
-# channel 1 and channel 2 were ever separated at this stage. Both channels
-# get the same fixed coordinate, so we recenter the whole dataset at once.
 
 bmk1_dt <- as.data.table(bmk1_RNAi_data_total)
 bmk1_dt$xpoint <- as.integer(bmk1_dt$xpoint)
@@ -218,6 +222,12 @@ total_align_long <- bmk1_dt %>%
 ```
 
 ```{r}
+# Data-completeness check: for each position in the fixed coordinate
+# (aligned_row, -166:166), count total observations and how many are NA.
+# Every embryo covers the full -166:166 range with real values, so
+# pct_na should be 0 throughout. Non-zero values would flag missing
+# data in the raw macro output.
+
 total_align_long %>%
   group_by(aligned_row) %>%
   summarize(
@@ -226,24 +236,24 @@ total_align_long %>%
     pct_na = mean(is.na(intensity)) * 100
   ) %>%
   arrange(aligned_row) %>%
-  print(n = Inf)
+  head()
+
 ```
 ## Generate .csv of max intensities for erm-1 in bmk-1 KD and L4440 control 
+
+End of script: saves and exports to ../03_output directory 
 
 ```{r}
 max_intensities <- total_align_long %>%
   filter(!grepl("ch1", unique_id)) %>% # filter out rows that contain set-3 in ch1
   group_by(unique_id) %>%
   slice_max(intensity, n = 1, with_ties = FALSE)
-
-write_csv(max_intensities, "bmk-1_L4440_ch2_max_intensities.csv")
 ```
 
 
 ## re-arrange the dataset and calculate the means 
 
 ```{r meanplot, echo = TRUE, warning = FALSE, message = FALSE}
-
 # Normalize the data by dividing by the embryo-specific mean
 bmk1_norm_total <- total_align_long %>%
   separate_wider_delim(unique_id, delim = "_", names = c("date", NA, "treatment", "embryoID", "channel")) %>%
@@ -281,9 +291,8 @@ bmk1_wide_by_sample <- bmk1_norm_total %>%
             values_from = normalized_intensity,
             id_cols = c(strain, aligned_row, treatment, channel))
 
-
-
 colnames(bmk1_wide_by_sample)
+
 # Play around with mean, medium, and sum:
 bmk1_wide_with_stats <- bmk1_wide_by_sample %>%
   rowwise() %>%
@@ -300,7 +309,9 @@ bmk1_wide_with_stats <- bmk1_wide_by_sample %>%
 bmk1_wide_with_range <- bmk1_wide_with_stats %>%
   rowwise() %>%
   mutate(ymeanmax = sum(mean_signal, sd_signal) ) %>%
-  mutate(ymeanmin = sum(mean_signal, -sd_signal)) 
+  mutate(ymeanmin = sum(mean_signal, -sd_signal)) %>%
+  ungroup() %>%
+  mutate(treatment = factor(treatment, levels = c("L4440", "bmk-1")))
 
 colorselection = c("#000000", "#2189ce")
 
@@ -330,209 +341,253 @@ b <- ggplot(data = bmk1_wide_with_range, aes(x = aligned_row, y = mean_signal, g
 
 ```
 
+## Create a metric of "membrane-y-ness" for each condition
 
-## Try to create a metric of "membrane-y-ness" for each condition combo
+We are comparing the log2 fold change intensity at the membrane to the flanking regions along the anterior to posterior axis
 
-I want a metric that reports the ratio of erm-1 intensity signal at "0" (the peak) versus at -100 or +100. I'll
-take the average of -100 and +100.
+For 2-cell stage, we used the range: -100,0,100
 
-```{r membraneyness, echo = TRUE, warning = FALSE, message = FALSE}
+For 4-cell stage, use -50,0,50 range because the cells are smaller, and the orientation of the membrane can push the ROI quantification box outside of the embryo. 
 
-# extract the "peak" at 1 versus the -100 and +100 values
-peaks_and_valleys <- bmk1_norm_total %>%
-  filter(aligned_row %in% c(-50,1,50))
+```{r membraneyness, echo = TRUE, warning = FALSE, message = FALSE, fig.width = 6, fig.height = 6}
 
-# Nest the -100, 1, and +100 values into a single cell
-nest_pandv <- peaks_and_valleys %>%
-  group_by(date, treatment, embryoID, channel) %>%
-  nest()
-
-# A function to calculate the ratio of the value at 1 compared to the mean of -100 and +100
-my_calc2 <- function(df) {
-  df$normalized_intensity[2] / mean(c(df$normalized_intensity[1], df$normalized_intensity[3]))
-}
-
-# Calculate the ratio for each datapoint
-foldChange_calc <- nest_pandv %>%
-  mutate(fc_enrich = map_dbl(data, my_calc2))
-
-# Change some columns to factors
-foldChange_calc$treatment <- factor(foldChange_calc$treatment, levels = c("L4440", "bmk-1")) 
-foldChange_calc$channel <- as.factor(foldChange_calc$channel)
-
-# calculate the max & min - figure out how to set the y-axis
-summary(log(foldChange_calc$fc_enrich, base = 2))
-
-# plot the data:
-d <- ggplot(data = foldChange_calc, aes(x = as.factor(channel), y = log(fc_enrich, base = 2), fill = treatment))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_jitter(position=position_jitterdodge())+
-  scale_y_continuous(limits = c(-0.5, 1.5)) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  scale_fill_manual(values = c("L4440" = "darkgray", "bmk-1" = "lightblue"),
-                   labels = c("L4440" = "L4440 control", "bmk-1" = "bmk-1 RNAi"))+labs(y = "log2 FoldChange Enrichment of mRNA \n(mRNA intensity at 0 / mean mRNA intensity at -50 and 50)", x = "mRNA") +
-  scale_x_discrete(labels = c("ch1" = "set-3", "ch2" = "erm-1"))+
-  theme_classic(base_size = 12)
-
-d
-
-e <- ggplot(data = foldChange_calc, aes(x = as.factor(treatment), y = log(fc_enrich, base = 2), fill = channel))+
-  geom_boxplot(outlier.shape = NA)+
-  geom_jitter(position=position_jitterdodge())+
-  scale_y_continuous(limits = c(-0.5, 1.5)) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(y = "log2 FoldChange Enrichment of mRNA \n(mRNA intensity at 0 / mean mRNA intensity at -50 and 50)", x = "mRNA") +
-  theme_classic(base_size = 12)
-
-#e
-
-getwd()
-
+# # extract the peak intensity versus the -50 and +50 values
+# peaks_and_valleys <- bmk1_norm_total %>%
+#   filter(aligned_row %in% c(-50,0,50))
+# 
+# # Nest the -50, 0, and +50 values
+# nest_pandv <- peaks_and_valleys %>%
+#   group_by(date, treatment, embryoID, channel) %>%
+#   nest()
+# 
+# # A function to calculate the ratio of the value at 0 compared to the mean of positions, -50 and +50
+# my_calc2 <- function(df) {
+#   df$normalized_intensity[2] / mean(c(df$normalized_intensity[1], df$normalized_intensity[3]))
+# }
+# 
+# # Calculate the ratio for each datapoint
+# foldChange_calc <- nest_pandv %>%
+#   mutate(fc_enrich = map_dbl(data, my_calc2))
+# 
+# # Change some columns to factors
+# foldChange_calc$treatment <- factor(foldChange_calc$treatment, levels = c("L4440", "bmk-1")) 
+# foldChange_calc$channel <- as.factor(foldChange_calc$channel)
+# 
+# 
+# # plot the data:
+# d <- ggplot(data = foldChange_calc, aes(x = as.factor(channel), y = log(fc_enrich, base = 2), fill = treatment))+
+#   geom_boxplot(outlier.shape = NA)+
+#   geom_jitter(position=position_jitterdodge())+
+#   scale_y_continuous(limits = c(-0.5, 1.0)) +
+#   geom_hline(yintercept = 0, linetype = "dashed") +
+#   scale_fill_manual(values = c("L4440" = "darkgray", "bmk-1" = "lightblue"),
+#                    labels = c("L4440" = "L4440 control", "bmk-1" = "bmk-1 RNAi"))+labs(y = "log2 FoldChange Enrichment of mRNA (ABa - ABp) \n(mRNA intensity at 0 / mean mRNA intensity at -50 and 50)", x = "mRNA") +
+#   scale_x_discrete(labels = c("ch1" = "set-3", "ch2" = "erm-1"))+
+#   theme_classic(base_size = 12)
+# 
+# d
+# 
+# e <- ggplot(data = foldChange_calc, aes(x = as.factor(treatment), y = log(fc_enrich, base = 2), fill = channel))+
+#   geom_boxplot(outlier.shape = NA)+
+#   geom_jitter(position=position_jitterdodge())+
+#   scale_y_continuous(limits = c(-0.5, 1.0)) +
+#   geom_hline(yintercept = 0, linetype = "dashed") +
+#   labs(y = "log2 FoldChange Enrichment of mRNA (ABa - ABp) \n(mRNA intensity at 0 / mean mRNA intensity at -50 and 50)", x = "mRNA") +
+#   theme_classic(base_size = 12)
 ```
-```{r}
-library(dplyr)
-
-foldChange_calc %>%
-  group_by(treatment, channel) %>%
-  summarise(
-    min_val    = min(log(fc_enrich, base = 2), na.rm = TRUE),
-    median_val = median(log(fc_enrich, base = 2), na.rm = TRUE),
-    max_val    = max(log(fc_enrich, base = 2), na.rm = TRUE)
-  )
-```
-```{r}
-foldChange_calc %>%
-  mutate(log2_fc = log(fc_enrich, base = 2)) %>%
-  group_by(treatment, channel) %>%
-  slice(c(
-    which.min(log2_fc),
-    which(log2_fc == median(log2_fc)), 
-    which.max(log2_fc)
-  ))
-```
-```{r}
-df <- foldChange_calc %>%
-  mutate(log2_fc = log(fc_enrich, base = 2)) %>%
-  group_by(treatment, channel) %>%
-  mutate(med = median(log2_fc))
-
-label_points <- bind_rows(
-  df %>% slice(which.min(log2_fc))              %>% mutate(label = "min"),
-  df %>% slice(which.min(abs(log2_fc - med)))   %>% mutate(label = "median"),
-  df %>% slice(which.max(log2_fc))              %>% mutate(label = "max")
-)
-```
-
-```{r}
-foldChange_calc %>%
-  mutate(log2_fc = log(fc_enrich, base = 2)) %>%
-  group_by(treatment, channel) %>%
-  filter(log2_fc == min(log2_fc) | log2_fc == max(log2_fc))
-```
-```{r}
-library(ggrepel)
-
-df <- foldChange_calc %>%
-  mutate(log2_fc = log(fc_enrich, base = 2)) %>%
-  group_by(treatment, channel) %>%
-  mutate(med = median(log2_fc))
-
-label_points <- bind_rows(
-  df %>% slice(which.min(log2_fc))            %>% mutate(label = "min"),
-  df %>% slice(which.min(abs(log2_fc - med))) %>% mutate(label = "median"),
-  df %>% slice(which.max(log2_fc))            %>% mutate(label = "max")
-) %>%
-  # Keep only one label per row — if min/median/max land on same row, 
-  # priority: min > max > median
-  group_by(treatment, channel, date, embryoID) %>%
-  slice(1) %>%
-  ungroup()
-
-```
-## List by order of max intensity in channel 2 (erm-1)
+## Get summary stats for log2 fold change enrichment at membrane vs flanking regions 
 
 ```{r}
 
-```
-
-
-```{r}
-label_points <- bind_rows(
-  df %>% slice(which.min(log2_fc)) %>% mutate(label = "min"),
-  df %>% slice(which.max(log2_fc)) %>% mutate(label = "max"),
-  df %>% filter(n() >= 3) %>% 
-         slice(which.min(abs(log2_fc - med))) %>% mutate(label = "median")
-) %>%
-  distinct(treatment, channel, date, embryoID, .keep_all = TRUE)
-```
-
-```{r}
-library(ggrepel)
-
-e + geom_label_repel(
-  data = label_points,
-  aes(x = as.factor(treatment), y = log2_fc,
-      label = paste(label, paste(date, embryoID, sep = "_"), sep = ": "),
-      fill = channel),
-  position = position_dodge(width = 0.75),  # matches geom_boxplot default
-  size = 3,
-  alpha = 0.8,
-  max.overlaps = 20,
-  show.legend = FALSE
-)
-```
-## Save the datasets
-
-```{print_data, echo = TRUE, warning = FALSE, message = FALSE}
-
-# set plotname
-today <- format(Sys.Date(), "%y%m%d")
-filename <- paste("../03_outputPlots/", today, "bmk-1_L4440.pdf", sep = "")
-
-pdf(filename, width = 6, height = 6)
-d
-dev.off()
-
-getwd()
-
+# foldChange_calc %>%
+#   group_by(treatment, channel) %>%
+#   summarise(
+#     min_log2fc    = min(log(fc_enrich, base = 2), na.rm = TRUE),
+#     median_log2fc = median(log(fc_enrich, base = 2), na.rm = TRUE),
+#     mean_log2fc   = mean(log(fc_enrich, base = 2), na.rm = TRUE),
+#     max_log2fc    = max(log(fc_enrich, base = 2), na.rm = TRUE)
+#   )
 
 ```
 
 ## Calculate the statistics
 
-```{r wilcox, echo = TRUE, warning = FALSE, message = FALSE}
+Check assumptions:
 
-foldChange_calc
-
-stats_wilcox <- foldChange_calc %>%
-  group_by(channel) %>%
-  wilcox_test(fc_enrich ~ treatment) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance()
-
-stats_wilcox
-
-
-```
+1) Normality (Shapiro test, QQ plots)
+2) Homogeneity of variance Levene's test) 
 
 ```{r}
-### Run Welch's t-test to confirm same result 
-stats_ttest <- foldChange_calc %>%
+# # Check normality 
+# 
+# foldChange_calc %>%
+#   group_by(treatment, channel) %>%
+#   shapiro_test(fc_enrich)
+# 
+# # QQ plots to visualize normality
+# ggplot(foldChange_calc, aes(sample = fc_enrich)) +
+#   stat_qq() +
+#   stat_qq_line() +
+#   facet_wrap(~ treatment + channel) +
+#   theme_bw()
+```
+```{r}
+# # Homogeneity of variance across treatment groups, within each channel
+# 
+# foldChange_calc %>%
+#   group_by(channel) %>%
+#   levene_test(fc_enrich ~ treatment)
+```
+
+Wilcoxon test
+
+```{r wilcox, echo = TRUE, warning = FALSE, message = FALSE}
+# foldChange_calc
+# 
+# stats_wilcox <- foldChange_calc %>%
+#   group_by(channel) %>%
+#   wilcox_test(fc_enrich ~ treatment) %>%
+#   adjust_pvalue(method = "BH") %>%
+#   add_significance()
+# 
+# stats_wilcox
+```
+Welch test with equal variance = TRUE
+
+```{r}
+# ### Passes normality and equal variance tests 
+# ### Standard t test with var.equal = TRUE is appropriate 
+# 
+# stats_ttest <- foldChange_calc %>%
+#   group_by(channel) %>%
+#   t_test(fc_enrich ~ treatment, var.equal = TRUE) %>%
+#   group_by(channel) %>%
+#   adjust_pvalue(method = "BH") %>%
+#   add_significance()
+# stats_ttest
+```
+
+---
+
+## Window-based "membrane-y-ness" (alternative to single-point fc_enrich)
+
+The metric above (`fc_enrich`) reads a single row for the peak (`aligned_row == 0`)
+and single rows for the flanks (`-50`, `50`), so it's sensitive to noise at exactly
+those three coordinates. This section averages over a small window around each of
+those points instead, which should be less sensitive to single-pixel noise while
+staying directly comparable to `fc_enrich` above.
+
+### Calculate the window-based ratio
+
+```{r window_membraneyness, echo = TRUE, warning = FALSE, message = FALSE}
+window_half_width <- 5  # rows to either side of each point
+
+peak_flank_windows <- bmk1_norm_total %>%
+  mutate(region = case_when(
+    aligned_row >= -window_half_width & aligned_row <= window_half_width ~ "peak",
+    aligned_row >= -50 - window_half_width & aligned_row <= -50 + window_half_width ~ "flank",
+    aligned_row >=  50 - window_half_width & aligned_row <=  50 + window_half_width ~ "flank",
+    TRUE ~ NA_character_
+  )) %>%
+  filter(!is.na(region))
+
+fc_window <- peak_flank_windows %>%
+  group_by(date, treatment, embryoID, channel, region) %>%
+  summarise(mean_intensity = mean(normalized_intensity, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = region, values_from = mean_intensity) %>%
+  mutate(fc_enrich_window = peak / flank,
+         log2_fc_window = log2(fc_enrich_window))
+
+```
+
+### Plot the window-based enrichment
+
+```{r window_plot, echo = TRUE, warning = FALSE, message = FALSE, fig.width = 6, fig.height = 6}
+fc_window$treatment <- factor(fc_window$treatment, levels = c("L4440", "bmk-1"))
+
+d_window <- ggplot(data = fc_window, aes(x = as.factor(channel), y = log2_fc_window, fill = treatment))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(position=position_jitterdodge())+
+  scale_y_continuous(limits = c(-0.5, 1.0)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  scale_fill_manual(values = c("L4440" = "darkgray", "bmk-1" = "lightblue"),
+                   labels = c("L4440" = "L4440 control", "bmk-1" = "bmk-1 RNAi"))+
+  labs(y = "log2 FoldChange Enrichment of mRNA (ABa - ABp) \n(window-averaged mRNA intensity at 0 / window-averaged mRNA intensity at -50 and 50)", x = "mRNA") +
+  scale_x_discrete(labels = c("ch1" = "set-3", "ch2" = "erm-1"))+
+  theme_classic(base_size = 12)
+
+d_window
+
+```
+
+### Summary stats
+
+```{r window_summary, echo = TRUE, warning = FALSE, message = FALSE}
+
+window_summary_stats <- fc_window %>%
+  group_by(treatment, channel) %>%
+  summarise(
+    min_log2fc    = min(log2_fc_window, na.rm = TRUE),
+    median_log2fc = median(log2_fc_window, na.rm = TRUE),
+    mean_log2fc   = mean(log2_fc_window, na.rm = TRUE),
+    max_log2fc    = max(log2_fc_window, na.rm = TRUE)
+  )
+
+window_summary_stats
+
+```
+
+### Check assumptions
+
+```{r window_assumptions, echo = TRUE, warning = FALSE, message = FALSE}
+
+# Normality
+fc_window %>%
+  group_by(treatment, channel) %>%
+  shapiro_test(fc_enrich_window)
+
+ggplot(fc_window, aes(sample = fc_enrich_window)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ treatment + channel) +
+  theme_bw()
+
+# Homogeneity of variance
+fc_window %>%
   group_by(channel) %>%
-  t_test(fc_enrich ~ treatment) %>%
-  group_by(channel) %>%              # re-add grouping, lost by t_test()
+  levene_test(fc_enrich_window ~ treatment)
+
+```
+
+### Statistics
+
+1) Wilcoxon test
+
+```{r window_stats, echo = TRUE, warning = FALSE, message = FALSE}
+
+# 1) Wilcoxon test
+
+stats_wilcox_window <- fc_window %>%
+  group_by(channel) %>%
+  wilcox_test(fc_enrich_window ~ treatment) %>%
   adjust_pvalue(method = "BH") %>%
   add_significance()
-stats_ttest
+
+stats_wilcox_window
+
+# 2) Welch t test with var.equal = TRUE 
+
+stats_ttest_window <- fc_window %>%
+  group_by(channel) %>%
+  t_test(fc_enrich_window ~ treatment, var.equal = TRUE) %>%
+  group_by(channel) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance()
+
+stats_ttest_window
+
 ```
 
-## Session info
-
-```{r sessionInfo, echo = TRUE, warning = FALSE, message = FALSE}
-
-sessionInfo()
-
-```
 ---
 
 ## Export plots and stats
@@ -543,15 +598,25 @@ today      <- format(Sys.Date(), "%y%m%d")
 output_dir <- "../03_output"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-ggsave(file.path(output_dir, paste0(today, "_boxplot_merged.svg")), plot = d,
-       width = 12, height = 7)
+ggsave(file.path(output_dir, paste0(today, "_boxplot_window.svg")), plot = d_window,
+       width = 6, height = 6)
 ggsave(file.path(output_dir, paste0(today, "_linescan_individual.svg")), plot = normalized_linescan,
-       width = 14, height = 12)
+       width = 6, height = 6)
 ggsave(file.path(output_dir, paste0(today, "_mean_signal_linscan.svg")), plot = a,
-       width = 14, height = 12)
+       width = 6, height = 6)
 
-write_csv(stats_wilcox, file.path(output_dir, paste0(today, "_pairwise_wilcoxon_stats.csv")))
+write_csv(window_summary_stats, file.path(output_dir, paste0(today, "_window_summary_stats.csv")))
+write_csv(stats_wilcox_window, file.path(output_dir, paste0(today, "_wilcoxon_stats_window.csv")))
+write_csv(stats_ttest_window, file.path(output_dir, paste0(today, "_ttest_stats_window.csv")))
 
 cat("Exported to:", normalizePath(output_dir), "\n")
+
+```
+
+## Session info
+
+```{r sessionInfo, echo = TRUE, warning = FALSE, message = FALSE}
+
+sessionInfo()
 
 ```

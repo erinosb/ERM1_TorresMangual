@@ -1,7 +1,7 @@
 4-cell erm-1 bmk-1 KD analysis
 ================
 Sam Zavislan-Pullaro, Erin Osborne Nishimura
-2026-08-26
+2026-09-16
 
 - [Overview](#overview)
 - [Load libraries](#load-libraries)
@@ -225,8 +225,8 @@ dim(test_8)
 
 ``` r
 # Extract out the salient information from the filename and pivot the data longer
-# Had to manually change image names to follow convention/consistency
-# Imaging date in the first field and embryo ID # remained unchanged
+# Had to manually change image names to follow convention/consistency (date_strain_treatment_ID_R3D.dv)
+# Imaging date in the first field and embryo ID remained unchanged
 
 # ABa - ABp
 control_1_exp <- control_1[2:dim(control_1)[1],1:335] %>%
@@ -679,16 +679,18 @@ ggplot(data = bmk1_RNAi_data_total, aes(x = timepoints, y = intensity, group = c
   theme_bw()
 ```
 
-![](260719_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+![](260916_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ## Use fixed coordinate system
 
-Peak alignment not used in this analysis because. Aligning each embryo
-to its own observed channel-2 peak risks manufacturing apparent
-enrichment at the alignment point, since by construction that point is
-the brightest value in every embryo. Instead, every embryo uses the same
+Peak intensity alignment is not used in this analysis. Aligning each
+embryo to its own observed channel-2 peak risks manufacturing apparent
+enrichment at the alignment point. Instead, every embryo uses the same
 fixed coordinate system based on its row position (`xpoint`), recentered
-so it spans the same `-166:166` range.
+so it spans the same `-166:166` range. Position 0 is the center of the
+ROI box from the FIJI macro quantification script. The center of the ROI
+box was manually aligned to the membrane, using a PH::GFP membrane
+marker strain to visualize the membrane.
 
 ``` r
 bmk1_dt <- as.data.table(bmk1_RNAi_data_total)
@@ -737,345 +739,18 @@ total_align_long %>%
     pct_na = mean(is.na(intensity)) * 100
   ) %>%
   arrange(aligned_row) %>%
-  print(n = Inf)
+  head()
 ```
 
-    ## # A tibble: 333 × 4
-    ##     aligned_row n_total  n_na pct_na
-    ##           <dbl>   <int> <int>  <dbl>
-    ##   1        -166      78     0      0
-    ##   2        -165      78     0      0
-    ##   3        -164      78     0      0
-    ##   4        -163      78     0      0
-    ##   5        -162      78     0      0
-    ##   6        -161      78     0      0
-    ##   7        -160      78     0      0
-    ##   8        -159      78     0      0
-    ##   9        -158      78     0      0
-    ##  10        -157      78     0      0
-    ##  11        -156      78     0      0
-    ##  12        -155      78     0      0
-    ##  13        -154      78     0      0
-    ##  14        -153      78     0      0
-    ##  15        -152      78     0      0
-    ##  16        -151      78     0      0
-    ##  17        -150      78     0      0
-    ##  18        -149      78     0      0
-    ##  19        -148      78     0      0
-    ##  20        -147      78     0      0
-    ##  21        -146      78     0      0
-    ##  22        -145      78     0      0
-    ##  23        -144      78     0      0
-    ##  24        -143      78     0      0
-    ##  25        -142      78     0      0
-    ##  26        -141      78     0      0
-    ##  27        -140      78     0      0
-    ##  28        -139      78     0      0
-    ##  29        -138      78     0      0
-    ##  30        -137      78     0      0
-    ##  31        -136      78     0      0
-    ##  32        -135      78     0      0
-    ##  33        -134      78     0      0
-    ##  34        -133      78     0      0
-    ##  35        -132      78     0      0
-    ##  36        -131      78     0      0
-    ##  37        -130      78     0      0
-    ##  38        -129      78     0      0
-    ##  39        -128      78     0      0
-    ##  40        -127      78     0      0
-    ##  41        -126      78     0      0
-    ##  42        -125      78     0      0
-    ##  43        -124      78     0      0
-    ##  44        -123      78     0      0
-    ##  45        -122      78     0      0
-    ##  46        -121      78     0      0
-    ##  47        -120      78     0      0
-    ##  48        -119      78     0      0
-    ##  49        -118      78     0      0
-    ##  50        -117      78     0      0
-    ##  51        -116      78     0      0
-    ##  52        -115      78     0      0
-    ##  53        -114      78     0      0
-    ##  54        -113      78     0      0
-    ##  55        -112      78     0      0
-    ##  56        -111      78     0      0
-    ##  57        -110      78     0      0
-    ##  58        -109      78     0      0
-    ##  59        -108      78     0      0
-    ##  60        -107      78     0      0
-    ##  61        -106      78     0      0
-    ##  62        -105      78     0      0
-    ##  63        -104      78     0      0
-    ##  64        -103      78     0      0
-    ##  65        -102      78     0      0
-    ##  66        -101      78     0      0
-    ##  67        -100      78     0      0
-    ##  68         -99      78     0      0
-    ##  69         -98      78     0      0
-    ##  70         -97      78     0      0
-    ##  71         -96      78     0      0
-    ##  72         -95      78     0      0
-    ##  73         -94      78     0      0
-    ##  74         -93      78     0      0
-    ##  75         -92      78     0      0
-    ##  76         -91      78     0      0
-    ##  77         -90      78     0      0
-    ##  78         -89      78     0      0
-    ##  79         -88      78     0      0
-    ##  80         -87      78     0      0
-    ##  81         -86      78     0      0
-    ##  82         -85      78     0      0
-    ##  83         -84      78     0      0
-    ##  84         -83      78     0      0
-    ##  85         -82      78     0      0
-    ##  86         -81      78     0      0
-    ##  87         -80      78     0      0
-    ##  88         -79      78     0      0
-    ##  89         -78      78     0      0
-    ##  90         -77      78     0      0
-    ##  91         -76      78     0      0
-    ##  92         -75      78     0      0
-    ##  93         -74      78     0      0
-    ##  94         -73      78     0      0
-    ##  95         -72      78     0      0
-    ##  96         -71      78     0      0
-    ##  97         -70      78     0      0
-    ##  98         -69      78     0      0
-    ##  99         -68      78     0      0
-    ## 100         -67      78     0      0
-    ## 101         -66      78     0      0
-    ## 102         -65      78     0      0
-    ## 103         -64      78     0      0
-    ## 104         -63      78     0      0
-    ## 105         -62      78     0      0
-    ## 106         -61      78     0      0
-    ## 107         -60      78     0      0
-    ## 108         -59      78     0      0
-    ## 109         -58      78     0      0
-    ## 110         -57      78     0      0
-    ## 111         -56      78     0      0
-    ## 112         -55      78     0      0
-    ## 113         -54      78     0      0
-    ## 114         -53      78     0      0
-    ## 115         -52      78     0      0
-    ## 116         -51      78     0      0
-    ## 117         -50      78     0      0
-    ## 118         -49      78     0      0
-    ## 119         -48      78     0      0
-    ## 120         -47      78     0      0
-    ## 121         -46      78     0      0
-    ## 122         -45      78     0      0
-    ## 123         -44      78     0      0
-    ## 124         -43      78     0      0
-    ## 125         -42      78     0      0
-    ## 126         -41      78     0      0
-    ## 127         -40      78     0      0
-    ## 128         -39      78     0      0
-    ## 129         -38      78     0      0
-    ## 130         -37      78     0      0
-    ## 131         -36      78     0      0
-    ## 132         -35      78     0      0
-    ## 133         -34      78     0      0
-    ## 134         -33      78     0      0
-    ## 135         -32      78     0      0
-    ## 136         -31      78     0      0
-    ## 137         -30      78     0      0
-    ## 138         -29      78     0      0
-    ## 139         -28      78     0      0
-    ## 140         -27      78     0      0
-    ## 141         -26      78     0      0
-    ## 142         -25      78     0      0
-    ## 143         -24      78     0      0
-    ## 144         -23      78     0      0
-    ## 145         -22      78     0      0
-    ## 146         -21      78     0      0
-    ## 147         -20      78     0      0
-    ## 148         -19      78     0      0
-    ## 149         -18      78     0      0
-    ## 150         -17      78     0      0
-    ## 151         -16      78     0      0
-    ## 152         -15      78     0      0
-    ## 153         -14      78     0      0
-    ## 154         -13      78     0      0
-    ## 155         -12      78     0      0
-    ## 156         -11      78     0      0
-    ## 157         -10      78     0      0
-    ## 158          -9      78     0      0
-    ## 159          -8      78     0      0
-    ## 160          -7      78     0      0
-    ## 161          -6      78     0      0
-    ## 162          -5      78     0      0
-    ## 163          -4      78     0      0
-    ## 164          -3      78     0      0
-    ## 165          -2      78     0      0
-    ## 166          -1      78     0      0
-    ## 167           0      78     0      0
-    ## 168           1      78     0      0
-    ## 169           2      78     0      0
-    ## 170           3      78     0      0
-    ## 171           4      78     0      0
-    ## 172           5      78     0      0
-    ## 173           6      78     0      0
-    ## 174           7      78     0      0
-    ## 175           8      78     0      0
-    ## 176           9      78     0      0
-    ## 177          10      78     0      0
-    ## 178          11      78     0      0
-    ## 179          12      78     0      0
-    ## 180          13      78     0      0
-    ## 181          14      78     0      0
-    ## 182          15      78     0      0
-    ## 183          16      78     0      0
-    ## 184          17      78     0      0
-    ## 185          18      78     0      0
-    ## 186          19      78     0      0
-    ## 187          20      78     0      0
-    ## 188          21      78     0      0
-    ## 189          22      78     0      0
-    ## 190          23      78     0      0
-    ## 191          24      78     0      0
-    ## 192          25      78     0      0
-    ## 193          26      78     0      0
-    ## 194          27      78     0      0
-    ## 195          28      78     0      0
-    ## 196          29      78     0      0
-    ## 197          30      78     0      0
-    ## 198          31      78     0      0
-    ## 199          32      78     0      0
-    ## 200          33      78     0      0
-    ## 201          34      78     0      0
-    ## 202          35      78     0      0
-    ## 203          36      78     0      0
-    ## 204          37      78     0      0
-    ## 205          38      78     0      0
-    ## 206          39      78     0      0
-    ## 207          40      78     0      0
-    ## 208          41      78     0      0
-    ## 209          42      78     0      0
-    ## 210          43      78     0      0
-    ## 211          44      78     0      0
-    ## 212          45      78     0      0
-    ## 213          46      78     0      0
-    ## 214          47      78     0      0
-    ## 215          48      78     0      0
-    ## 216          49      78     0      0
-    ## 217          50      78     0      0
-    ## 218          51      78     0      0
-    ## 219          52      78     0      0
-    ## 220          53      78     0      0
-    ## 221          54      78     0      0
-    ## 222          55      78     0      0
-    ## 223          56      78     0      0
-    ## 224          57      78     0      0
-    ## 225          58      78     0      0
-    ## 226          59      78     0      0
-    ## 227          60      78     0      0
-    ## 228          61      78     0      0
-    ## 229          62      78     0      0
-    ## 230          63      78     0      0
-    ## 231          64      78     0      0
-    ## 232          65      78     0      0
-    ## 233          66      78     0      0
-    ## 234          67      78     0      0
-    ## 235          68      78     0      0
-    ## 236          69      78     0      0
-    ## 237          70      78     0      0
-    ## 238          71      78     0      0
-    ## 239          72      78     0      0
-    ## 240          73      78     0      0
-    ## 241          74      78     0      0
-    ## 242          75      78     0      0
-    ## 243          76      78     0      0
-    ## 244          77      78     0      0
-    ## 245          78      78     0      0
-    ## 246          79      78     0      0
-    ## 247          80      78     0      0
-    ## 248          81      78     0      0
-    ## 249          82      78     0      0
-    ## 250          83      78     0      0
-    ## 251          84      78     0      0
-    ## 252          85      78     0      0
-    ## 253          86      78     0      0
-    ## 254          87      78     0      0
-    ## 255          88      78     0      0
-    ## 256          89      78     0      0
-    ## 257          90      78     0      0
-    ## 258          91      78     0      0
-    ## 259          92      78     0      0
-    ## 260          93      78     0      0
-    ## 261          94      78     0      0
-    ## 262          95      78     0      0
-    ## 263          96      78     0      0
-    ## 264          97      78     0      0
-    ## 265          98      78     0      0
-    ## 266          99      78     0      0
-    ## 267         100      78     0      0
-    ## 268         101      78     0      0
-    ## 269         102      78     0      0
-    ## 270         103      78     0      0
-    ## 271         104      78     0      0
-    ## 272         105      78     0      0
-    ## 273         106      78     0      0
-    ## 274         107      78     0      0
-    ## 275         108      78     0      0
-    ## 276         109      78     0      0
-    ## 277         110      78     0      0
-    ## 278         111      78     0      0
-    ## 279         112      78     0      0
-    ## 280         113      78     0      0
-    ## 281         114      78     0      0
-    ## 282         115      78     0      0
-    ## 283         116      78     0      0
-    ## 284         117      78     0      0
-    ## 285         118      78     0      0
-    ## 286         119      78     0      0
-    ## 287         120      78     0      0
-    ## 288         121      78     0      0
-    ## 289         122      78     0      0
-    ## 290         123      78     0      0
-    ## 291         124      78     0      0
-    ## 292         125      78     0      0
-    ## 293         126      78     0      0
-    ## 294         127      78     0      0
-    ## 295         128      78     0      0
-    ## 296         129      78     0      0
-    ## 297         130      78     0      0
-    ## 298         131      78     0      0
-    ## 299         132      78     0      0
-    ## 300         133      78     0      0
-    ## 301         134      78     0      0
-    ## 302         135      78     0      0
-    ## 303         136      78     0      0
-    ## 304         137      78     0      0
-    ## 305         138      78     0      0
-    ## 306         139      78     0      0
-    ## 307         140      78     0      0
-    ## 308         141      78     0      0
-    ## 309         142      78     0      0
-    ## 310         143      78     0      0
-    ## 311         144      78     0      0
-    ## 312         145      78     0      0
-    ## 313         146      78     0      0
-    ## 314         147      78     0      0
-    ## 315         148      78     0      0
-    ## 316         149      78     0      0
-    ## 317         150      78     0      0
-    ## 318         151      78     0      0
-    ## 319         152      78     0      0
-    ## 320         153      78     0      0
-    ## 321         154      78     0      0
-    ## 322         155      78     0      0
-    ## 323         156      78     0      0
-    ## 324         157      78     0      0
-    ## 325         158      78     0      0
-    ## 326         159      78     0      0
-    ## 327         160      78     0      0
-    ## 328         161      78     0      0
-    ## 329         162      78     0      0
-    ## 330         163      78     0      0
-    ## 331         164      78     0      0
-    ## 332         165      78     0      0
-    ## 333         166      78     0      0
+    ## # A tibble: 6 × 4
+    ##   aligned_row n_total  n_na pct_na
+    ##         <dbl>   <int> <int>  <dbl>
+    ## 1        -166      78     0      0
+    ## 2        -165      78     0      0
+    ## 3        -164      78     0      0
+    ## 4        -163      78     0      0
+    ## 5        -162      78     0      0
+    ## 6        -161      78     0      0
 
 ## re-arrange the dataset and calculate the means
 
@@ -1145,7 +820,7 @@ normalized_linescan <- ggplot(data = bmk1_norm_total, aes(x = aligned_row, y = n
 normalized_linescan
 ```
 
-![](260719_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](260916_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 # treatment_colors <- c(
@@ -1253,7 +928,7 @@ a <- ggplot(data = bmk1_wide_with_range, aes(x = aligned_row, y = mean_signal, g
 a
 ```
 
-![](260719_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](260916_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 # Plot in a different way - set-3 and erm-1 mRNA split into facets
@@ -1271,7 +946,7 @@ b <- ggplot(data = bmk1_wide_with_range, aes(x = aligned_row, y = mean_signal, g
 b
 ```
 
-![](260719_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+![](260916_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 ## Create a metric of “membrane-y-ness” for each condition
 
@@ -1465,7 +1140,7 @@ d_window <- ggplot(data = fc_window, aes(x = as.factor(channel), y = log2_fc_win
 d_window
 ```
 
-![](260719_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/window_plot-1.png)<!-- -->
+![](260916_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/window_plot-1.png)<!-- -->
 
 ### Summary stats
 
@@ -1514,7 +1189,7 @@ ggplot(fc_window, aes(sample = fc_enrich_window)) +
   theme_bw()
 ```
 
-![](260719_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/window_assumptions-1.png)<!-- -->
+![](260916_bmk-1_ABa-ABp-EMS_window_files/figure-gfm/window_assumptions-1.png)<!-- -->
 
 ``` r
 # Homogeneity of variance
