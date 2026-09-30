@@ -1,0 +1,17 @@
+channel,.y.,group1,group2,n1,n2,statistic,p,p.adj,p.adj.signif
+ch1,log2_fc_window,L4440,erm-1,11,11,81,0.193,0.5546666666666666,ns
+ch1,log2_fc_window,L4440,klp-9,11,12,74,0.651,0.8012307692307693,ns
+ch1,log2_fc_window,L4440,bmk-1,11,17,100,0.781,0.8330666666666667,ns
+ch1,log2_fc_window,L4440,klp-18,11,17,108,0.517,0.7653333333333332,ns
+ch1,log2_fc_window,L4440,klp-19,11,15,95,0.54,0.7653333333333332,ns
+ch1,log2_fc_window,L4440,unc-116,11,15,90,0.721,0.824,ns
+ch1,log2_fc_window,L4440,nmy-1,11,15,94,0.574,0.7653333333333332,ns
+ch1,log2_fc_window,L4440,nmy-2,11,17,121,0.208,0.5546666666666666,ns
+ch2,log2_fc_window,L4440,erm-1,11,11,121,2.84e-6,2.272e-5,****
+ch2,log2_fc_window,L4440,klp-9,11,12,132,1.48e-6,2.272e-5,****
+ch2,log2_fc_window,L4440,bmk-1,11,17,141,0.025,0.1,ns
+ch2,log2_fc_window,L4440,klp-18,11,17,117,0.285,0.6514285714285714,ns
+ch2,log2_fc_window,L4440,klp-19,11,15,63,0.33,0.66,ns
+ch2,log2_fc_window,L4440,unc-116,11,15,86,0.878,0.878,ns
+ch2,log2_fc_window,L4440,nmy-1,11,15,94,0.574,0.7653333333333332,ns
+ch2,log2_fc_window,L4440,nmy-2,11,17,152,0.005,0.026666666666666665,*
