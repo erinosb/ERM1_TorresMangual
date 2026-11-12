@@ -383,6 +383,59 @@ normalized_linescan <- ggplot(data = bmk1_norm_total, aes(x = aligned_row, y = n
 normalized_linescan
 ```
 
+
+```{r}
+normalized_linescan <- ggplot(
+  data = bmk1_norm_total,
+  aes(
+    x = aligned_row,
+    y = normalized_intensity,
+    group = interaction(date, embryoID, channel)
+  )
+) +
+  geom_line(
+    aes(color = channel),
+    alpha = 0.5
+  ) +
+  scale_color_manual(
+    values = c("ch1" = "black", "ch2" = "#2189ce")
+  ) +
+  facet_wrap(~ treatment) +
+  labs(color = NULL) +
+  theme_bw()
+
+normalized_linescan <- normalized_linescan +
+  theme(
+    text = element_text(size = 16),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 16, face = "bold"),
+    legend.text = element_text(size = 14)
+  )
+
+normalized_linescan
+normalized_linescan
+
+ggsave(
+  "../03_output/4-cell_bmk1_normalized_linescan.svg",
+  plot = normalized_linescan,
+  width = 10,
+  height = 5,
+  device = "svg"
+)
+
+
+
+
+```
+
+
+```{r}
+unique(bmk1_norm_total$channel)
+```
+
+
+
 ```{r kinesins_mean_overlaid, fig.height = 3, fig.width = 7}
 
 # treatment_colors <- c(
@@ -677,6 +730,30 @@ d_window <- ggplot(data = fc_window, aes(x = as.factor(channel), y = log2_fc_win
 d_window
 
 ```
+
+
+```{r}
+d_window <- ggplot(data = fc_window, aes(x = as.factor(channel), y = log2_fc_window, fill = treatment)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(position = position_jitterdodge()) +
+  scale_y_continuous(limits = c(-0.5, 1.0)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  scale_fill_manual(
+    values = c("L4440" = "darkgray", "bmk-1" = "lightblue"),
+    labels = c("L4440" = "L4440 control", "bmk-1" = "bmk-1 RNAi")
+  ) +
+  labs(
+    y = "log2 FoldChange Enrichment of mRNA \n(window-averaged mRNA intensity at 0 / window-averaged mRNA intensity at -50 and 50)",
+    x = "mRNA"
+  ) +
+  scale_x_discrete(labels = c("ch1" = "set-3", "ch2" = "erm-1")) +
+  coord_flip() +
+  theme_classic(base_size = 12)
+
+d_window
+```
+
+
 
 ### Summary stats
 

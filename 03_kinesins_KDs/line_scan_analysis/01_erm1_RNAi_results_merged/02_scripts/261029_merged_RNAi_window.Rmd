@@ -365,6 +365,80 @@ linescan_individual
 
 ```
 
+
+
+```{r}
+kinesin_treatments <- c("L4440", "klp-9", "bmk-1", "klp-18", "klp-19", "unc-116")
+
+norm_total_filtered <- norm_total %>%
+  filter(treatment %in% kinesin_treatments)
+
+unique(norm_total_filtered$channel)
+linescan_individual <- ggplot(
+  norm_total_filtered,
+  aes(
+    x = aligned_row,
+    y = normalized_intensity,
+    group = interaction(date, embryoID, channel),
+    color = channel
+  )
+) +
+  geom_line(
+    alpha = 0.6,
+    linewidth = 0.8
+  ) +
+  scale_color_manual(
+    values = c(
+      "ch1" = "black",
+      "ch2" = "#C04A83"
+    ),
+    labels = c(
+      "ch1" = "SET-3",
+      "ch2" = "ERM-1"
+    )
+  ) +
+  facet_grid(
+    treatment ~ .,
+    switch = "y" 
+  ) +
+  labs(
+    title = "Individual normalized line scans — all treatments",
+    x = "Position (aligned_row)",
+    y = "Normalized intensity",
+    color = NULL
+  ) +
+  theme_bw(base_size = 18) +
+scale_y_continuous(position = "right") +
+theme(
+  strip.text = element_text(face = "bold", size = 22),
+  strip.background = element_rect(fill = "white"),
+  strip.placement = "outside",
+  strip.text.y.left = element_text(angle = 90),
+  legend.position = "top",
+  legend.text = element_text(size = 22),
+  axis.title = element_text(size = 24, face = "bold"),
+  axis.text = element_text(size = 20, color = "black"),
+  plot.title = element_text(size = 24, face = "bold"),
+  panel.spacing = unit(0.5, "lines"),
+  aspect.ratio = 0.5
+)
+
+linescan_individual
+
+
+ggsave(
+  filename = paste0("../03_output/", format(Sys.Date(), "%Y%m%d"), "_linescan_individual_kinesin.svg"),
+  plot = linescan_individual,
+  width = 6,
+  height = 12,
+  units = "in",
+  device = "svg"
+)
+
+```
+
+
+
 ---
 
 ## Section 2: Mean +- SD line scans
@@ -476,7 +550,7 @@ Ratio of normalized intensity at position 0 versus the mean of positions
 
 ```{r}
 #treatment_order <- c("L4440", "klp-9", "bmk-1", "klp-18", "klp-19", "unc-116")
-treatment_order <- c("unc-116","klp-19",  "klp-18","bmk-1","klp-9", "L4440")
+treatment_order <- c("klp-18", "unc-116", "klp-19","bmk-1","klp-9", "L4440")
 peaks_and_valleys <- norm_total %>%
   filter(aligned_row %in% c(-100, 0, 100))
 
@@ -766,7 +840,7 @@ ggplot(df_long, aes(x = subdirectory, y = log2_enrichment, fill = mRNA)) +
     limits = c(-2, 2),
     breaks = seq(-2, 2, by = 0.5)
   ) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = -0.5, linetype = "dashed") +
   labs(y = "log2 membrane enrichment (area-normalized)", x = NULL) +
   theme_classic(base_size = 16) +
   theme(
@@ -779,6 +853,914 @@ ggplot(df_long, aes(x = subdirectory, y = log2_enrichment, fill = mRNA)) +
 
 
 ```
+
+```{r}
+# Combine the data into a data frame
+# Calculate densities
+# Calculate enrichment
+# Calculate log2 enrichment
+
+df <- combined_data %>%
+  mutate(
+    # erm-1
+    erm1_membrane_density = `erm 1_mRNA in gfp mask` / gfp_mask_area_pixels,
+    erm1_embryo_density = `erm 1_mRNA total molecules` / embryo_area_pixels,
+    erm1_enrichment = erm1_membrane_density / erm1_embryo_density,
+    log2_erm1 = log2(erm1_enrichment),
+
+    # set-3
+    set3_membrane_density = `set 3_mRNA in gfp mask` / gfp_mask_area_pixels,
+    set3_embryo_density = `set 3_mRNA total molecules` / embryo_area_pixels,
+    set3_enrichment = set3_membrane_density / set3_embryo_density,
+    log2_set3 = log2(set3_enrichment)
+  )
+
+# Transform to long format
+df_long <- df %>%
+  pivot_longer(
+    cols = c(log2_erm1, log2_set3),
+    names_to = "mRNA",
+    values_to = "log2_enrichment"
+  ) %>%
+  mutate(
+    mRNA = recode(
+      mRNA,
+      log2_erm1 = "erm-1",
+      log2_set3 = "set-3"
+    )
+  )
+
+ggplot(df_long, aes(x = subdirectory, y = log2_enrichment, fill = mRNA)) +
+  geom_boxplot(
+    width = 0.6,
+    outlier.shape = 16,
+    alpha = 0.8,
+    position = position_dodge(width = 0.8)
+  ) +
+  scale_fill_manual(
+    values = c("set-3" = "#1a6fa0", "erm-1" = "magenta")
+  ) +
+  scale_y_continuous(
+    limits = c(-2, 2),
+    breaks = seq(-2, 2, by = 0.5)
+  ) +
+  geom_hline(
+    yintercept = -0.5,
+    linetype = "dashed"
+  ) +
+  labs(
+    y = "log2 membrane enrichment (area-normalized)",
+    x = NULL,
+    fill = "mRNA"
+  ) +
+  coord_flip() +
+  theme_classic(base_size = 16) +
+  theme(
+    legend.position = "right",
+    axis.text.y = element_text(size = 10, face = "italic"),
+    axis.text.x = element_text(size = 20),
+    axis.title.x = element_text(size = 16)
+  )
+```
+
+```{r}
+# merge in 3-axis plot
+
+# Calculate membrane enrichment
+df <- combined_data %>%
+  mutate(
+    # erm-1
+    erm1_membrane_density = `erm 1_mRNA in gfp mask` / gfp_mask_area_pixels,
+    erm1_embryo_density = `erm 1_mRNA total molecules` / embryo_area_pixels,
+    erm1_enrichment = erm1_membrane_density / erm1_embryo_density,
+    log2_erm1 = log2(erm1_enrichment),
+
+    # set-3
+    set3_membrane_density = `set 3_mRNA in gfp mask` / gfp_mask_area_pixels,
+    set3_embryo_density = `set 3_mRNA total molecules` / embryo_area_pixels,
+    set3_enrichment = set3_membrane_density / set3_embryo_density,
+    log2_set3 = log2(set3_enrichment)
+  )
+
+# Combine all three measurements into long format
+df_membrane_long <- df %>%
+  pivot_longer(
+    cols = c(log2_erm1, log2_set3),
+    names_to = "channel",
+    values_to = "log2_fc"
+  ) %>%
+  mutate(
+    channel = recode(
+      channel,
+      log2_erm1 = "erm-1",
+      log2_set3 = "set-3"
+    ),
+    measurement = "Membrane enrichment"
+  )
+
+df_position <- foldChange_calc %>%
+  mutate(
+    measurement = "Position 0 vs ±100",
+    channel = recode(channel,
+                     ch1 = "set-3",
+                     ch2 = "erm-1")
+  ) %>%
+  select(treatment, channel, log2_fc, measurement)
+
+df_membrane_long <- df_membrane_long %>%
+  mutate(
+    treatment = subdirectory,
+    measurement = "Membrane enrichment"
+  ) %>%
+  select(treatment, channel, log2_fc, measurement)
+
+# Combine datasets
+plot_data <- bind_rows(df_position, df_membrane_long) %>%
+  mutate(
+    measurement = factor(
+      measurement,
+      levels = c("Position 0 vs ±100", "Membrane enrichment")
+    ),
+    channel = factor(channel, levels = c("set-3", "erm-1"))
+  )
+
+
+```
+
+```{r}
+# 
+# # Plot
+# p_combined <- ggplot(
+#   plot_data,
+#   aes(x = treatment, y = log2_fc, fill = channel)
+# ) +
+#   geom_boxplot(
+#     position = position_dodge(width = 0.8),
+#     outlier.shape = NA,
+#     width = 0.6,
+#     alpha = 0.85,
+#     color = "black",
+#     linewidth = 0.4
+#   ) +
+#   geom_point(
+#     aes(color = channel),
+#     position = position_jitterdodge(
+#       jitter.width = 0.12,
+#       dodge.width = 0.8
+#     ),
+#     size = 1.3,
+#     alpha = 0.65
+#   ) +
+#   facet_grid(
+#     measurement ~ .,
+#     scales = "free_x",
+#     space = "free_x",
+#     switch = "y"
+#   ) +
+#   scale_fill_manual(
+#     values = c(
+#       "set-3" = "#1A6FA0",
+#       "erm-1" = "#C04A83"
+#     ),
+#     labels = channel_labels
+#   ) +
+#   scale_color_manual(
+#     values = c(
+#       "set-3" = "black",
+#       "erm-1" = "black"
+#     ),
+#     guide = "none"
+#   ) +
+#   geom_hline(
+#     data = data.frame(
+#       measurement = factor(
+#         c("Position 0 vs ±100", "Membrane enrichment"),
+#         levels = c("Position 0 vs ±100", "Membrane enrichment")
+#       ),
+#       reference = c(0, -0.5)
+#     ),
+#     aes(yintercept = reference),
+#     linetype = "dashed",
+#     color = "gray30",
+#     linewidth = 0.5,
+#     inherit.aes = FALSE
+#   ) +
+#   scale_y_continuous(
+#     breaks = seq(-2, 2, by = 0.5),
+#     expand = expansion(mult = c(0.02, 0.02))
+#   ) +
+#   coord_flip(
+#     ylim = c(-2, 2),
+#     clip = "on"
+#   ) +
+#   labs(
+#     x = NULL,
+#     y = expression(log[2]~"enrichment"),
+#     fill = NULL
+#   ) +
+#   theme_classic(base_size = 14) +
+#   theme(
+#     # Facet labels
+#     strip.placement = "outside",
+#     strip.background = element_blank(),
+#     strip.text.y.left = element_text(
+#       angle = 0,
+#       face = "bold",
+#       size = 12
+#     ),
+# 
+#     # Axes
+#     axis.text.y = element_text(
+#       face = "italic",
+#       size = 11,
+#       color = "black"
+#     ),
+#     axis.text.x = element_text(
+#       size = 11,
+#       color = "black"
+#     ),
+#     axis.title.x = element_text(
+#       size = 13,
+#       face = "bold",
+#       margin = margin(t = 10)
+#     ),
+# 
+#     # Legend
+#     legend.position = "top",
+#     legend.text = element_text(size = 12),
+#     legend.key.size = unit(0.5, "cm"),
+# 
+#     # Spacing
+#     panel.spacing = unit(1.2, "lines"),
+# 
+#     # Axis appearance
+#     axis.line = element_line(linewidth = 0.5),
+#     axis.ticks = element_line(linewidth = 0.4)
+#   )
+# 
+# # Display plot
+# p_combined
+# 
+# # Save SVG
+# ggsave(
+#   filename = file.path(output_dir, "combined_three_measurement_plot.svg"),
+#   plot = p_combined,
+#   width = 5.5,
+#   height = 8,
+#   units = "in",
+#   device = "svg",
+#   bg = "white"
+# )
+```
+
+
+
+```{r}
+# library(ggplot2)
+# library(patchwork)
+# 
+# # Shared aesthetics
+# plot_colors <- c(
+#   "set-3" = "#1A6FA0",
+#   "erm-1" = "#C04A83"
+# )
+# 
+# # Common plot theme
+# common_theme <- theme_classic(base_size = 14) +
+#   theme(
+#     axis.text.y = element_text(
+#       face = "italic",
+#       size = 11,
+#       color = "black"
+#     ),
+#     axis.text.x = element_text(
+#       size = 11,
+#       color = "black"
+#     ),
+#     axis.title.y = element_blank(),
+#     axis.title.x = element_text(
+#       size = 12,
+#       face = "bold"
+#     ),
+#     legend.position = "top",
+#     legend.text = element_text(size = 12),
+#     legend.key.size = unit(0.5, "cm"),
+#     axis.line = element_line(linewidth = 0.5),
+#     axis.ticks = element_line(linewidth = 0.4)
+#   )
+# 
+# # -----------------------------
+# # 1. LINE-SCAN PLOT
+# # -----------------------------
+# 
+# p_position <- ggplot(
+#   filter(plot_data, measurement == "Position 0 vs ±100"),
+#   aes(x = treatment, y = log2_fc, fill = channel)
+# ) +
+#   geom_boxplot(
+#     position = position_dodge(width = 0.8),
+#     outlier.shape = NA,
+#     width = 0.6,
+#     alpha = 0.85,
+#     color = "black",
+#     linewidth = 0.4
+#   ) +
+#   geom_point(
+#     aes(color = channel),
+#     position = position_jitterdodge(
+#       jitter.width = 0.12,
+#       dodge.width = 0.8
+#     ),
+#     size = 1.3,
+#     alpha = 0.65
+#   ) +
+#   scale_fill_manual(
+#     values = plot_colors,
+#     labels = channel_labels
+#   ) +
+#   scale_color_manual(
+#     values = c("set-3" = "black", "erm-1" = "black"),
+#     guide = "none"
+#   ) +
+#   geom_hline(
+#     yintercept = 0,
+#     linetype = "dashed",
+#     color = "gray30",
+#     linewidth = 0.5
+#   ) +
+#   scale_y_continuous(
+#     breaks = seq(-2, 2, 0.5),
+#     limits = c(-2, 2),
+#     position = "right"
+#   ) +
+#   coord_flip() +
+#   labs(
+#     y = expression(log[2]~"line-scan enrichment"),
+#     x = NULL,
+#     fill = NULL
+#   ) +
+#   common_theme +
+#   theme(
+#     axis.text.x = element_blank(),
+#     axis.ticks.x = element_blank(),
+#     axis.title.y = element_text(
+#       face = "bold",
+#       margin = margin(l = 10)
+#     ),
+#     legend.position = "top"
+#   )
+# 
+# # -----------------------------
+# # 2. MEMBRANE ENRICHMENT PLOT
+# # -----------------------------
+# 
+# p_membrane <- ggplot(
+#   filter(plot_data, measurement == "Membrane enrichment"),
+#   aes(x = treatment, y = log2_fc, fill = channel)
+# ) +
+#   geom_boxplot(
+#     position = position_dodge(width = 0.8),
+#     outlier.shape = NA,
+#     width = 0.6,
+#     alpha = 0.85,
+#     color = "black",
+#     linewidth = 0.4
+#   ) +
+#   geom_point(
+#     aes(color = channel),
+#     position = position_jitterdodge(
+#       jitter.width = 0.12,
+#       dodge.width = 0.8
+#     ),
+#     size = 1.3,
+#     alpha = 0.65
+#   ) +
+#   scale_fill_manual(
+#     values = plot_colors,
+#     labels = channel_labels
+#   ) +
+#   scale_color_manual(
+#     values = c("set-3" = "black", "erm-1" = "black"),
+#     guide = "none"
+#   ) +
+#   geom_hline(
+#     yintercept = -0.5,
+#     linetype = "dashed",
+#     color = "gray30",
+#     linewidth = 0.5
+#   ) +
+#   scale_y_continuous(
+#     breaks = seq(-2, 2, 0.5),
+#     limits = c(-2, 2)
+#   ) +
+#   coord_flip() +
+#   labs(
+#     y = expression(log[2]~"membrane enrichment"),
+#     x = NULL,
+#     fill = NULL
+#   ) +
+#   common_theme +
+#   theme(
+#     axis.title.y = element_text(
+#       face = "bold",
+#       margin = margin(l = 10)
+#     ),
+#     legend.position = "none"
+#   )
+# 
+# # -----------------------------
+# # 3. COMBINE
+# # -----------------------------
+# 
+# p_combined <- (
+#   p_position /
+#   p_membrane
+# ) +
+#   plot_layout(
+#     heights = c(1, 1),
+#     guides = "collect"
+#   ) &
+#   theme(
+#     legend.position = "top"
+#   )
+# 
+# p_combined
+# 
+# # -----------------------------
+# # 4. SAVE
+# # -----------------------------
+# 
+# ggsave(
+#   filename = file.path(output_dir, "combined_three_measurement_plot.svg"),
+#   plot = p_combined,
+#   width = 6,
+#   height = 8,
+#   units = "in",
+#   device = "svg",
+#   bg = "white"
+# )
+```
+
+```{r}
+# library(ggplot2)
+# library(patchwork)
+# 
+# # Shared aesthetics
+# plot_colors <- c(
+#   "set-3" = "#1A6FA0",
+#   "erm-1" = "#C04A83"
+# )
+# 
+# # Common theme
+# common_theme <- theme_classic(base_size = 14) +
+#   theme(
+#     axis.text.y = element_text(
+#       face = "italic",
+#       size = 11,
+#       color = "black"
+#     ),
+#     axis.text.x = element_text(
+#       size = 11,
+#       color = "black"
+#     ),
+#     axis.title.y = element_blank(),
+#     axis.title.x = element_text(
+#       size = 12,
+#       face = "bold"
+#     ),
+#     legend.position = "top",
+#     legend.text = element_text(size = 12),
+#     legend.key.size = unit(0.5, "cm"),
+#     axis.line = element_line(linewidth = 0.5),
+#     axis.ticks = element_line(linewidth = 0.4)
+#   )
+# 
+# 
+# # ---------------------------------
+# # 1. LINE-SCAN PLOT (TOP X-AXIS)
+# # ---------------------------------
+# 
+# p_position <- ggplot(
+#   filter(plot_data, measurement == "Position 0 vs ±100"),
+#   aes(x = treatment, y = log2_fc, fill = channel)
+# ) +
+#   geom_boxplot(
+#     position = position_dodge(width = 0.8),
+#     outlier.shape = NA,
+#     width = 0.6,
+#     alpha = 0.85,
+#     color = "black",
+#     linewidth = 0.4
+#   ) +
+#   geom_point(
+#     aes(color = channel),
+#     position = position_jitterdodge(
+#       jitter.width = 0.12,
+#       dodge.width = 0.8
+#     ),
+#     size = 1.3,
+#     alpha = 0.65
+#   ) +
+#   scale_fill_manual(
+#     values = plot_colors,
+#     labels = channel_labels
+#   ) +
+#   scale_color_manual(
+#     values = c(
+#       "set-3" = "black",
+#       "erm-1" = "black"
+#     ),
+#     guide = "none"
+#   ) +
+#   geom_hline(
+#     yintercept = 0,
+#     linetype = "dashed",
+#     color = "gray30",
+#     linewidth = 0.5
+#   ) +
+#   scale_y_continuous(
+#     breaks = seq(-1.5, 2.5, by = 0.5),
+#     limits = c(-1.5, 2.5),
+#     position = "right"
+#   ) +
+#   coord_flip() +
+#   labs(
+#     y = expression(log[2]~"line-scan enrichment"),
+#     x = NULL,
+#     fill = NULL
+#   ) +
+#   common_theme +
+#   theme(
+#   axis.text.x = element_text(
+#     size = 11,
+#     color = "black"
+#   ),
+#   axis.ticks.x = element_line(
+#     linewidth = 0.4,
+#     color = "black"
+#   ),
+#   axis.title.y = element_text(
+#     face = "bold",
+#     margin = margin(l = 10)
+#   ),
+#   legend.position = "top"
+# )
+# 
+# 
+# # ---------------------------------
+# # 2. MEMBRANE ENRICHMENT (BOTTOM X-AXIS)
+# # ---------------------------------
+# 
+# p_membrane <- ggplot(
+#   filter(plot_data, measurement == "Membrane enrichment"),
+#   aes(x = treatment, y = log2_fc, fill = channel)
+# ) +
+#   geom_boxplot(
+#     position = position_dodge(width = 0.8),
+#     outlier.shape = NA,
+#     width = 0.6,
+#     alpha = 0.85,
+#     color = "black",
+#     linewidth = 0.4
+#   ) +
+#   geom_point(
+#     aes(color = channel),
+#     position = position_jitterdodge(
+#       jitter.width = 0.12,
+#       dodge.width = 0.8
+#     ),
+#     size = 1.3,
+#     alpha = 0.65
+#   ) +
+#   scale_fill_manual(
+#     values = plot_colors,
+#     labels = channel_labels
+#   ) +
+#   scale_color_manual(
+#     values = c(
+#       "set-3" = "black",
+#       "erm-1" = "black"
+#     ),
+#     guide = "none"
+#   ) +
+#   geom_hline(
+#     yintercept = -0.5,
+#     linetype = "dashed",
+#     color = "gray30",
+#     linewidth = 0.5
+#   ) +
+#   scale_y_continuous(
+#     breaks = seq(-2, 2, by = 0.5),
+#     limits = c(-2, 2)
+#   ) +
+#   coord_flip() +
+#   labs(
+#     y = expression(log[2]~"membrane enrichment"),
+#     x = NULL,
+#     fill = NULL
+#   ) +
+#   common_theme +
+#   theme(
+#     axis.title.y = element_text(
+#       face = "bold",
+#       margin = margin(l = 10)
+#     ),
+#     legend.position = "none"
+#   )
+# 
+# 
+# # ---------------------------------
+# # 3. COMBINE PLOTS
+# # ---------------------------------
+# 
+# p_combined <- (
+#   p_position /
+#   p_membrane
+# ) +
+#   plot_layout(
+#     heights = c(1, 1),
+#     guides = "collect"
+#   ) &
+#   theme(
+#     legend.position = "top"
+#   )
+# 
+# # Display
+# p_combined
+# 
+# 
+# # ---------------------------------
+# # 4. SAVE SVG
+# # ---------------------------------
+# 
+# ggsave(
+#   filename = file.path(
+#     output_dir,
+#     "combined_three_measurement_plot.svg"
+#   ),
+#   plot = p_combined,
+#   width = 6,
+#   height = 8,
+#   units = "in",
+#   device = "svg",
+#   bg = "white"
+)
+```
+
+```{r}
+plot_data_combined <- plot_data_combined %>%
+  ungroup() %>%
+  mutate(
+    treatment = factor(treatment),
+    plot_group = factor(
+      plot_group,
+      levels = c(
+        "SET-3 line scan",
+        "ERM-1 line scan",
+        "SET-3 membrane",
+        "ERM-1 membrane"
+      )
+    )
+  )
+
+# Check number of observations in each group
+plot_data_combined %>%
+  count(treatment, plot_group) %>%
+  print(n = Inf)
+```
+```{r, fig.width=12, fig.height=30}
+library(patchwork)
+
+# Combine line-scan and membrane enrichment data
+plot_data <- bind_rows(
+  df_position,
+  df_membrane_long
+) %>%
+  ungroup() %>%
+  mutate(
+    measurement = factor(
+      measurement,
+      levels = c("Position 0 vs ±100", "Membrane enrichment")
+    ),
+    channel = factor(
+      channel,
+      levels = c("set-3", "erm-1")
+    )
+  )
+
+# Prepare data for combined plot
+plot_data_combined <- plot_data %>%
+  ungroup() %>%
+  mutate(
+    # Shift line-scan values to align the two axes
+    plot_value = ifelse(
+      measurement == "Position 0 vs ±100",
+      log2_fc - 0.5,
+      log2_fc
+    ),
+
+    # Define four separate boxplot groups
+    plot_group = case_when(
+      measurement == "Position 0 vs ±100" & channel == "set-3" ~ "SET-3 line scan",
+      measurement == "Position 0 vs ±100" & channel == "erm-1" ~ "ERM-1 line scan",
+      measurement == "Membrane enrichment" & channel == "set-3" ~ "SET-3 membrane",
+      measurement == "Membrane enrichment" & channel == "erm-1" ~ "ERM-1 membrane"
+    ),
+
+    plot_group = factor(
+      plot_group,
+      levels = c(
+        "SET-3 line scan",
+        "ERM-1 line scan",
+        "SET-3 membrane",
+        "ERM-1 membrane"
+      )
+    ),
+
+    # Combine equivalent treatment names
+    treatment = recode(
+      treatment,
+      "klp-14" = "bmk-1",
+      "L4440" = "l4440"
+    ),
+
+    treatment = factor(treatment)
+  )
+
+# Verify observations per treatment and group
+plot_data_combined %>%
+  count(treatment, plot_group) %>%
+  print(n = Inf)
+
+# Colors
+plot_colors <- c(
+  "SET-3 line scan" = "#1A6FA0",
+  "ERM-1 line scan" = "#C04A83",
+  "SET-3 membrane" = "#8BBBD3",
+  "ERM-1 membrane" = "#D99AB8"
+)
+
+# Create combined plot
+p_combined <- ggplot(
+  plot_data_combined,
+  aes(
+    x = treatment,
+    y = plot_value,
+    fill = plot_group,
+    group = interaction(treatment, plot_group)
+  )
+) +
+
+  # Boxplots
+  geom_boxplot(
+    position = position_dodge(width = 0.85),
+    width = 0.65,
+    outlier.shape = NA,
+    alpha = 0.85
+  ) +
+
+  # Individual data points
+  geom_point(
+    aes(color = plot_group),
+    position = position_jitterdodge(
+      jitter.width = 0.12,
+      jitter.height = 0,
+      dodge.width = 0.85
+    ),
+    size = 1.8,
+    alpha = 0.65
+  ) +
+
+  # Colors
+  scale_fill_manual(values = plot_colors) +
+  scale_color_manual(values = plot_colors) +
+
+  # Bottom axis: membrane enrichment
+  # Top axis: line-scan enrichment
+  scale_y_continuous(
+    breaks = seq(-2, 2, by = 0.5),
+    sec.axis = sec_axis(
+      ~ . + 0.5,
+      breaks = seq(-1.5, 2.5, by = 0.5),
+      name = expression(log[2] ~ "line-scan enrichment")
+    ),
+    name = expression(log[2] ~ "membrane enrichment")
+  ) +
+
+  # Reference line
+  geom_hline(
+    yintercept = -0.5,
+    linetype = "dashed",
+    color = "gray40",
+    linewidth = 0.5
+  ) +
+
+  # Flip coordinates to display treatments vertically
+  coord_flip(ylim = c(-2, 2)) +
+
+  labs(
+    x = NULL,
+    fill = NULL,
+    color = NULL
+  ) +
+
+  theme_classic() +
+
+  theme(
+    legend.position = "top",
+    legend.text = element_text(size = 10),
+    axis.text = element_text(
+      color = "black",
+      size = 10
+    ),
+    axis.title = element_text(
+      color = "black",
+      size = 11
+    ),
+    axis.title.x.top = element_text(
+      margin = margin(b = 8)
+    ),
+    axis.title.x.bottom = element_text(
+      margin = margin(t = 8)
+    ),
+    plot.margin = margin(10, 15, 10, 15)
+  )
+
+# Display plot
+p_combined
+
+# Save high-resolution, wider plot
+ggsave(
+  filename = "combined_enrichment_plot.png",
+  plot = p_combined,
+  width = 12,
+  height = 6,
+  units = "in",
+  dpi = 300
+)
+
+
+```
+
+
+
+```{r}
+membrane_area <- combined_data %>%
+  ungroup() %>%
+  mutate(
+    treatment = recode(
+      subdirectory,
+      "klp-14" = "bmk-1",
+      "L4440" = "l4440"
+    ),
+    membrane_area_percent =
+      (gfp_mask_area_pixels / embryo_area_pixels) * 100
+  )
+```
+
+
+```{r}
+p_membrane_area <- ggplot(
+  membrane_area,
+  aes(x = treatment, y = gfp_mask_area_pixels, fill = treatment)
+) +
+  geom_boxplot(
+    width = 0.65,
+    outlier.shape = NA,
+    alpha = 0.75
+  ) +
+  geom_jitter(
+    width = 0.15,
+    size = 2,
+    alpha = 0.65
+  ) +
+  labs(
+    x = NULL,
+    y = "GFP-positive membrane area (% of embryo area)"
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(color = "black")
+  ) +
+scale_y_continuous(
+    limits = c(0, 35000),
+    breaks = seq(0, 35000, 2000)
+  )
+p_membrane_area
+```
+
+
+
+
+
+
+
+
+
+
+
 ### Obtain metrics and calculate statistics
 
 Filter out NAs, 0s, inf values
@@ -826,7 +1808,7 @@ stats_erins <- df_long_filtered %>%
 stats_erins
 ```
 
-
+# Membrane coloc data
 ```{r plot}
 
 library(svglite)
